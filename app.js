@@ -55,6 +55,3 @@ fetch(API_URL)
 .catch(error => {
     console.error(error);
 });
-
-});
-}
