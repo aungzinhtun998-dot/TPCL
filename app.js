@@ -1,26 +1,30 @@
 const map = L.map("map").setView([16.8661, 96.1951], 7);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom:19,
-    attribution:"© OpenStreetMap"
+    maxZoom: 19,
+    attribution: "© OpenStreetMap"
 }).addTo(map);
 
-// User GPS
-if(navigator.geolocation){
+// GPS
+if (navigator.geolocation) {
 
-    navigator.geolocation.getCurrentPosition(function(position){
+    navigator.geolocation.getCurrentPosition(function(position) {
 
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        L.marker([lat,lng])
+        L.marker([lat, lng])
             .addTo(map)
             .bindPopup("📍 Your Location")
             .openPopup();
 
-        map.setView([lat,lng],12);
+        map.setView([lat, lng], 12);
 
     });
+
+}
+
+// API
 const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_h0k7N5ujK5zgGvqP09aYrtmhVRA7K2snrNdaUlmZkikm/exec?api=customers";
 
 fetch(API_URL)
@@ -29,7 +33,7 @@ fetch(API_URL)
 
     customers.forEach(customer => {
 
-        if(customer.Latitude && customer.Longitude){
+        if (customer.Latitude && customer.Longitude) {
 
             L.marker([
                 Number(customer.Latitude),
@@ -49,8 +53,8 @@ fetch(API_URL)
 
 })
 .catch(error => {
-
-    console.log(error);
+    console.error(error);
+});
 
 });
 }
