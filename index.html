@@ -4,7 +4,6 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>TPCL</title>
@@ -13,8 +12,7 @@
 
 <link rel="stylesheet" href="style.css">
 
-<link
-rel="stylesheet"
+<link rel="stylesheet"
 href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 
 </head>
@@ -22,10 +20,9 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <body>
 
 <header>
-
-<h2>TPCL</h2>
-
+    <h2>TPCL</h2>
 </header>
+
 <div class="search-box">
     <input
         type="text"
@@ -33,9 +30,11 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         placeholder="🔍 Search Customer..."
         onkeyup="searchCustomer()">
 </div>
+
 <div id="map"></div>
+
 <button id="listBtn" onclick="toggleList()">
-    📋 Customers
+📋
 </button>
 
 <div id="customerList">
@@ -49,10 +48,10 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     </div>
 
 </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="app.js"></script>
 
 </body>
-
 </html>
