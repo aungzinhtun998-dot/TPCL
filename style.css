@@ -23,7 +23,7 @@ header{
 
 #map{
     width:100%;
-    height:calc(100vh - 60px);
+    height:calc(100vh - 120px);
 }
 .search-box{
     padding:10px;
