@@ -3,55 +3,72 @@
 
 <head>
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>TPCL</title>
+    <title>TPCL v4.0</title>
 
-<link rel="manifest" href="manifest.json">
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
 
-<link rel="stylesheet" href="style.css">
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
 
-<link rel="stylesheet"
-href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 </head>
 
 <body>
 
-<header>
-    <h2>TPCL</h2>
-</header>
+    <!-- Search -->
+    <div class="search-box">
 
-<div class="search-box">
-    <input
-        type="text"
-        id="searchInput"
-        placeholder="🔍 Search Customer..."
-        onkeyup="searchCustomer()">
-</div>
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="🔍 Search Customer..."
+            onkeyup="searchCustomer()">
 
-<div id="map"></div>
-
-<button id="listBtn" onclick="toggleList()">
-📋
-</button>
-
-<div id="customerList">
-
-    <div class="list-header">
-        <h3>Customer List</h3>
     </div>
 
-    <div id="listContent">
-        Loading...
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- GPS Button -->
+    <button id="gpsBtn" onclick="goCurrentLocation()">
+        📍
+    </button>
+
+    <!-- Customer List Button -->
+    <button id="listBtn" onclick="toggleList()">
+        📋
+    </button>
+
+    <!-- Bottom Sheet -->
+    <div id="customerList">
+
+        <div class="sheet-header">
+
+            <h3>Customer List</h3>
+
+        </div>
+
+        <div id="listContent">
+
+            Loading Customers...
+
+        </div>
+
     </div>
 
-</div>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<script src="app.js"></script>
+    <!-- App JS -->
+    <script src="app.js"></script>
 
 </body>
+
 </html>
