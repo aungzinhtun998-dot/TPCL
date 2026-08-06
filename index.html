@@ -34,7 +34,21 @@ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         onkeyup="searchCustomer()">
 </div>
 <div id="map"></div>
+<button id="listBtn" onclick="toggleList()">
+    📋 Customers
+</button>
 
+<div id="customerList">
+
+    <div class="list-header">
+        <h3>Customer List</h3>
+    </div>
+
+    <div id="listContent">
+        Loading...
+    </div>
+
+</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script src="app.js"></script>
