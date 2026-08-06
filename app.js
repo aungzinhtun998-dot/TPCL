@@ -1,3 +1,5 @@
+const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_h0k7N5ujK5zgGvqP09aYrtmhVRA7K2snrNdaUlmZkikm/exec?api=customers";
+
 const map = L.map("map").setView([16.8661, 96.1951], 7);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -5,53 +7,61 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
 }).addTo(map);
 
-// GPS
+// Current Location
 if (navigator.geolocation) {
 
-    navigator.geolocation.getCurrentPosition(function(position) {
+    navigator.geolocation.getCurrentPosition(function(position){
 
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
         L.marker([lat, lng])
             .addTo(map)
-            .bindPopup("📍 Your Location")
-            .openPopup();
+            .bindPopup("📍 Your Current Location");
 
-        map.setView([lat, lng], 12);
+        map.setView([lat, lng], 11);
 
     });
 
 }
 
-// API
-const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_h0k7N5ujK5zgGvqP09aYrtmhVRA7K2snrNdaUlmZkikm/exec?api=customers";
+// Load Customers
+loadCustomers();
 
-fetch(API_URL)
-.then(response => response.json())
-.then(customers => {
+async function loadCustomers(){
 
-    customers.forEach(customer => {
+    try{
 
-        if (customer.Latitude && customer.Longitude) {
+        const response = await fetch(API_URL);
 
-            L.marker([
-                Number(customer.Latitude),
-                Number(customer.Longitude)
-            ])
-            .addTo(map)
-            .bindPopup(`
-                <b>${customer.Customer_Name}</b><br>
-                🌏 ${customer.Region}<br>
-                📍 ${customer.Township}<br>
-                🏷 ${customer.Brand}
-            `);
+        const customers = await response.json();
 
-        }
+        customers.forEach(customer=>{
 
-    });
+            if(customer.Latitude && customer.Longitude){
 
-})
-.catch(error => {
-    console.error(error);
-});
+                L.marker([
+                    parseFloat(customer.Latitude),
+                    parseFloat(customer.Longitude)
+                ])
+                .addTo(map)
+                .bindPopup(`
+                    <b>${customer.Customer_Name}</b><br>
+                    🌏 ${customer.Region}<br>
+                    📍 ${customer.Township}<br>
+                    🏷 ${customer.Brand}
+                `);
+
+            }
+
+        });
+
+        console.log(customers.length + " Customers Loaded");
+
+    }catch(err){
+
+        console.error(err);
+
+    }
+
+}
