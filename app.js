@@ -2,8 +2,12 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_
 
 let customers = [];
 let markers = [];
+let listOpen = false;
 
+// ======================
 // Create Map
+// ======================
+
 const map = L.map("map").setView([16.8661, 96.1951], 7);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -11,7 +15,10 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "© OpenStreetMap"
 }).addTo(map);
 
+// ======================
 // Current Location
+// ======================
+
 if (navigator.geolocation) {
 
     navigator.geolocation.getCurrentPosition(function(position){
@@ -29,7 +36,10 @@ if (navigator.geolocation) {
 
 }
 
+// ======================
 // Load Customers
+// ======================
+
 loadCustomers();
 
 async function loadCustomers(){
@@ -39,8 +49,6 @@ async function loadCustomers(){
         const response = await fetch(API_URL);
 
         customers = await response.json();
-
-        console.log(customers);
 
         customers.forEach(customer => {
 
@@ -64,6 +72,8 @@ async function loadCustomers(){
 
         });
 
+        buildCustomerList();
+
         console.log(customers.length + " Customers Loaded");
 
     }catch(err){
@@ -75,7 +85,10 @@ async function loadCustomers(){
 
 }
 
+// ======================
 // Search Customer
+// ======================
+
 function searchCustomer(){
 
     const keyword = document
@@ -84,23 +97,19 @@ function searchCustomer(){
         .trim()
         .toLowerCase();
 
-    if(keyword === ""){
-        return;
-    }
+    if(keyword === "") return;
 
-    for(let i = 0; i < customers.length; i++){
+    for(let i=0;i<customers.length;i++){
 
         const customer = customers[i];
 
-        if(
-            customer.Customer_Name &&
-            customer.Customer_Name.toLowerCase().includes(keyword)
-        ){
+        if(customer.Customer_Name &&
+           customer.Customer_Name.toLowerCase().includes(keyword)){
 
             map.setView([
                 parseFloat(customer.Latitude),
                 parseFloat(customer.Longitude)
-            ], 16);
+            ],16);
 
             markers[i].openPopup();
 
@@ -109,6 +118,75 @@ function searchCustomer(){
 
     }
 
-    alert("Customer Not Found");
+}
+
+// ======================
+// Customer List
+// ======================
+
+function buildCustomerList(){
+
+    let html = "";
+
+    customers.forEach((customer,index)=>{
+
+        html += `
+        <div class="customer-item" onclick="focusCustomer(${index})">
+
+            <b>${customer.Customer_Name}</b><br>
+
+            🌏 ${customer.Region}<br>
+
+            📍 ${customer.Township}<br>
+
+            🏷 ${customer.Brand}
+
+        </div>
+        `;
+
+    });
+
+    document.getElementById("listContent").innerHTML = html;
+
+}
+
+// ======================
+// Focus Customer
+// ======================
+
+function focusCustomer(index){
+
+    const customer = customers[index];
+
+    map.setView([
+        parseFloat(customer.Latitude),
+        parseFloat(customer.Longitude)
+    ],16);
+
+    markers[index].openPopup();
+
+    toggleList();
+
+}
+
+// ======================
+// Toggle List
+// ======================
+
+function toggleList(){
+
+    const panel = document.getElementById("customerList");
+
+    listOpen = !listOpen;
+
+    if(listOpen){
+
+        panel.classList.add("show");
+
+    }else{
+
+        panel.classList.remove("show");
+
+    }
 
 }
