@@ -35,7 +35,8 @@ async function loadCustomers(){
         const response = await fetch(API_URL);
 
         const customers = await response.json();
-
+console.log(customers);
+alert("Customers : " + customers.length);
         customers.forEach(customer=>{
 
             if(customer.Latitude && customer.Longitude){
