@@ -79,3 +79,28 @@ alert("Customers : " + customers.length);
     }
 
 }
+function searchCustomer(){
+
+    const keyword = document
+        .getElementById("searchInput")
+        .value
+        .toLowerCase();
+
+    customers.forEach((customer,index)=>{
+
+        if(
+            customer.Customer_Name &&
+            customer.Customer_Name.toLowerCase().includes(keyword)
+        ){
+
+            map.setView([
+                parseFloat(customer.Latitude),
+                parseFloat(customer.Longitude)
+            ],15);
+
+            markers[index].openPopup();
+        }
+
+    });
+
+}
