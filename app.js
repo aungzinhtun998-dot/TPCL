@@ -16,7 +16,19 @@ if (navigator.geolocation) {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        L.marker([lat, lng])
+        const marker = L.marker([
+    parseFloat(customer.Latitude),
+    parseFloat(customer.Longitude)
+])
+.addTo(map)
+.bindPopup(`
+    <b>${customer.Customer_Name}</b><br>
+    🌏 ${customer.Region}<br>
+    📍 ${customer.Township}<br>
+    🏷 ${customer.Brand}
+`);
+
+markers.push(marker);
             .addTo(map)
             .bindPopup("📍 Your Current Location");
 
