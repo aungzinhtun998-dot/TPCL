@@ -1,6 +1,9 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_h0k7N5ujK5zgGvqP09aYrtmhVRA7K2snrNdaUlmZkikm/exec?api=customers";
+
 let customers = [];
 let markers = [];
+
+// Create Map
 const map = L.map("map").setView([16.8661, 96.1951], 7);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -16,19 +19,7 @@ if (navigator.geolocation) {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        const marker = L.marker([
-    parseFloat(customer.Latitude),
-    parseFloat(customer.Longitude)
-])
-.addTo(map)
-.bindPopup(`
-    <b>${customer.Customer_Name}</b><br>
-    🌏 ${customer.Region}<br>
-    📍 ${customer.Township}<br>
-    🏷 ${customer.Brand}
-`);
-
-markers.push(marker);
+        L.marker([lat, lng])
             .addTo(map)
             .bindPopup("📍 Your Current Location");
 
@@ -48,13 +39,14 @@ async function loadCustomers(){
         const response = await fetch(API_URL);
 
         customers = await response.json();
-console.log(customers);
-alert("Customers : " + customers.length);
-        customers.forEach(customer=>{
+
+        console.log(customers);
+
+        customers.forEach(customer => {
 
             if(customer.Latitude && customer.Longitude){
 
-                L.marker([
+                const marker = L.marker([
                     parseFloat(customer.Latitude),
                     parseFloat(customer.Longitude)
                 ])
@@ -66,6 +58,8 @@ alert("Customers : " + customers.length);
                     🏷 ${customer.Brand}
                 `);
 
+                markers.push(marker);
+
             }
 
         });
@@ -75,18 +69,28 @@ alert("Customers : " + customers.length);
     }catch(err){
 
         console.error(err);
+        alert("Customer Data Load Error");
 
     }
 
 }
+
+// Search Customer
 function searchCustomer(){
 
     const keyword = document
         .getElementById("searchInput")
         .value
+        .trim()
         .toLowerCase();
 
-    customers.forEach((customer,index)=>{
+    if(keyword === ""){
+        return;
+    }
+
+    for(let i = 0; i < customers.length; i++){
+
+        const customer = customers[i];
 
         if(
             customer.Customer_Name &&
@@ -96,11 +100,15 @@ function searchCustomer(){
             map.setView([
                 parseFloat(customer.Latitude),
                 parseFloat(customer.Longitude)
-            ],15);
+            ], 16);
 
-            markers[index].openPopup();
+            markers[i].openPopup();
+
+            return;
         }
 
-    });
+    }
+
+    alert("Customer Not Found");
 
 }
