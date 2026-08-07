@@ -1,44 +1,91 @@
+// ================================
+// TPCL v4.0
+// Part 1 - Map + GPS + Load Customer
+// ================================
+
 const API_URL = "https://script.google.com/macros/s/AKfycbxiO2Zex_xr3CYDbwHy0N7_h0k7N5ujK5zgGvqP09aYrtmhVRA7K2snrNdaUlmZkikm/exec?api=customers";
 
+let map;
 let customers = [];
 let markers = [];
+
+let userLat = null;
+let userLng = null;
+
 let listOpen = false;
 
-// ======================
-// Create Map
-// ======================
+// ================================
+// Map
+// ================================
 
-const map = L.map("map").setView([16.8661, 96.1951], 7);
+map = L.map("map").setView([16.8661,96.1951],7);
 
-L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "© OpenStreetMap"
-}).addTo(map);
+L.tileLayer(
+    "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+        maxZoom:19,
+        attribution:"© OpenStreetMap"
+    }
+).addTo(map);
 
-// ======================
-// Current Location
-// ======================
+// ================================
+// Current GPS
+// ================================
 
-if (navigator.geolocation) {
+if(navigator.geolocation){
+
+    navigator.geolocation.getCurrentPosition(
+
+        function(position){
+
+            userLat = position.coords.latitude;
+            userLng = position.coords.longitude;
+
+            L.marker([userLat,userLng])
+                .addTo(map)
+                .bindPopup("📍 Your Current Location");
+
+            map.setView([userLat,userLng],11);
+
+        },
+
+        function(){
+
+            console.log("GPS Permission Denied");
+
+        }
+
+    );
+
+}
+
+// ================================
+// Floating GPS Button
+// ================================
+
+function goCurrentLocation(){
+
+    if(!navigator.geolocation){
+
+        alert("GPS Not Supported");
+        return;
+
+    }
 
     navigator.geolocation.getCurrentPosition(function(position){
 
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        userLat = position.coords.latitude;
+        userLng = position.coords.longitude;
 
-        L.marker([lat, lng])
-            .addTo(map)
-            .bindPopup("📍 Your Current Location");
-
-        map.setView([lat, lng], 11);
+        map.setView([userLat,userLng],15);
 
     });
 
 }
 
-// ======================
-// Load Customers
-// ======================
+// ================================
+// Load Customer
+// ================================
 
 loadCustomers();
 
@@ -50,143 +97,59 @@ async function loadCustomers(){
 
         customers = await response.json();
 
-        customers.forEach(customer => {
+        showCustomers();
 
-            if(customer.Latitude && customer.Longitude){
+    }
 
-                const marker = L.marker([
-                    parseFloat(customer.Latitude),
-                    parseFloat(customer.Longitude)
-                ])
-                .addTo(map)
-                .bindPopup(`
-                    <b>${customer.Customer_Name}</b><br>
-                    🌏 ${customer.Region}<br>
-                    📍 ${customer.Township}<br>
-                    🏷 ${customer.Brand}
-                `);
+    catch(error){
 
-                markers.push(marker);
+        console.error(error);
 
-            }
-
-        });
-
-        buildCustomerList();
-
-        console.log(customers.length + " Customers Loaded");
-
-    }catch(err){
-
-        console.error(err);
-        alert("Customer Data Load Error");
+        alert("Cannot Load Customer Data");
 
     }
 
 }
 
-// ======================
-// Search Customer
-// ======================
+// ================================
+// Show Customer Marker
+// ================================
 
-function searchCustomer(){
+function showCustomers(){
 
-    const keyword = document
-        .getElementById("searchInput")
-        .value
-        .trim()
-        .toLowerCase();
+    markers.forEach(marker=>{
 
-    if(keyword === "") return;
-
-    for(let i=0;i<customers.length;i++){
-
-        const customer = customers[i];
-
-        if(customer.Customer_Name &&
-           customer.Customer_Name.toLowerCase().includes(keyword)){
-
-            map.setView([
-                parseFloat(customer.Latitude),
-                parseFloat(customer.Longitude)
-            ],16);
-
-            markers[i].openPopup();
-
-            return;
-        }
-
-    }
-
-}
-
-// ======================
-// Customer List
-// ======================
-
-function buildCustomerList(){
-
-    let html = "";
-
-    customers.forEach((customer,index)=>{
-
-        html += `
-        <div class="customer-item" onclick="focusCustomer(${index})">
-
-            <b>${customer.Customer_Name}</b><br>
-
-            🌏 ${customer.Region}<br>
-
-            📍 ${customer.Township}<br>
-
-            🏷 ${customer.Brand}
-
-        </div>
-        `;
+        map.removeLayer(marker);
 
     });
 
-    document.getElementById("listContent").innerHTML = html;
+    markers=[];
 
-}
+    customers.forEach(customer=>{
 
-// ======================
-// Focus Customer
-// ======================
+        if(!customer.Latitude || !customer.Longitude) return;
 
-function focusCustomer(index){
+        const marker = L.marker([
 
-    const customer = customers[index];
+            Number(customer.Latitude),
+            Number(customer.Longitude)
 
-    map.setView([
-        parseFloat(customer.Latitude),
-        parseFloat(customer.Longitude)
-    ],16);
+        ])
+        .addTo(map)
+        .bindPopup(`
 
-    markers[index].openPopup();
+            <b>${customer.Customer_Name}</b><br><br>
 
-    toggleList();
+            🌏 ${customer.Region}<br>
+            📍 ${customer.Township}<br>
+            🏷 ${customer.Brand}
 
-}
+        `);
 
-// ======================
-// Toggle List
-// ======================
+        markers.push(marker);
 
-function toggleList(){
+    });
 
-    const panel = document.getElementById("customerList");
-
-    listOpen = !listOpen;
-
-    if(listOpen){
-
-        panel.classList.add("show");
-
-    }else{
-
-        panel.classList.remove("show");
-
-    }
+    buildCustomerList();
 
 }
