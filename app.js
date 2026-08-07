@@ -153,3 +153,149 @@ function showCustomers(){
     buildCustomerList();
 
 }
+// ================================
+// Search Customer
+// ================================
+
+function searchCustomer(){
+
+    const keyword = document
+        .getElementById("searchInput")
+        .value
+        .trim()
+        .toLowerCase();
+
+    if(keyword===""){
+
+        showCustomers();
+        return;
+
+    }
+
+    const filtered = customers.filter(customer=>{
+
+        return (
+
+            String(customer.Customer_Name || "").toLowerCase().includes(keyword) ||
+            String(customer.Region || "").toLowerCase().includes(keyword) ||
+            String(customer.Township || "").toLowerCase().includes(keyword) ||
+            String(customer.Brand || "").toLowerCase().includes(keyword)
+
+        );
+
+    });
+
+    showFilteredCustomers(filtered);
+
+}
+
+// ================================
+// Show Filtered Customer
+// ================================
+
+function showFilteredCustomers(data){
+
+    markers.forEach(marker=>map.removeLayer(marker));
+
+    markers=[];
+
+    data.forEach((customer,index)=>{
+
+        if(!customer.Latitude || !customer.Longitude) return;
+
+        const marker = L.marker([
+            Number(customer.Latitude),
+            Number(customer.Longitude)
+        ])
+        .addTo(map)
+        .bindPopup(`
+            <b>${customer.Customer_Name}</b><br><br>
+            🌏 ${customer.Region}<br>
+            📍 ${customer.Township}<br>
+            🏷 ${customer.Brand}
+        `);
+
+        markers.push(marker);
+
+    });
+
+    buildCustomerList(data);
+
+}
+
+// ================================
+// Customer List
+// ================================
+
+function buildCustomerList(data = customers){
+
+    let html="";
+
+    data.forEach(customer=>{
+
+        html += `
+        <div class="customer-item"
+            onclick="focusCustomer(${Number(customer.Latitude)},${Number(customer.Longitude)},'${String(customer.Customer_Name).replace(/'/g,"\\'")}')">
+
+            <b>${customer.Customer_Name}</b><br>
+
+            🌏 ${customer.Region}<br>
+
+            📍 ${customer.Township}<br>
+
+            🏷 ${customer.Brand}
+
+        </div>
+        `;
+
+    });
+
+    document.getElementById("listContent").innerHTML=html;
+
+}
+
+// ================================
+// Focus Customer
+// ================================
+
+function focusCustomer(lat,lng,name){
+
+    map.setView([lat,lng],16);
+
+    markers.forEach(marker=>{
+
+        const popup=marker.getPopup();
+
+        if(popup && popup.getContent().includes(name)){
+
+            marker.openPopup();
+
+        }
+
+    });
+
+    toggleList();
+
+}
+
+// ================================
+// Bottom Sheet
+// ================================
+
+function toggleList(){
+
+    const panel=document.getElementById("customerList");
+
+    listOpen=!listOpen;
+
+    if(listOpen){
+
+        panel.classList.add("show");
+
+    }else{
+
+        panel.classList.remove("show");
+
+    }
+
+}
