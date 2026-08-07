@@ -137,14 +137,57 @@ function showCustomers(){
         ])
         .addTo(map)
         .bindPopup(`
+    <div style="min-width:220px">
 
-            <b>${customer.Customer_Name}</b><br><br>
+        <h3 style="margin-bottom:8px;">
+            ${customer.Customer_Name}
+        </h3>
 
-            🌏 ${customer.Region}<br>
-            📍 ${customer.Township}<br>
-            🏷 ${customer.Brand}
+        🌏 <b>Region:</b> ${customer.Region}<br>
+        📍 <b>Township:</b> ${customer.Township}<br>
+        🏷 <b>Brand:</b> ${customer.Brand}<br>
 
-        `);
+        <div id="distance-${customer.Customer_Name.replace(/\s+/g,"")}">
+            📏 Calculating...
+        </div>
+
+        <br>
+
+        <a
+        href="tel:${customer.Phone_Number || ""}"
+        style="
+        display:inline-block;
+        background:#28a745;
+        color:white;
+        padding:8px 12px;
+        border-radius:8px;
+        text-decoration:none;
+        ">
+        📞 Call
+        </a>
+
+        <a
+        target="_blank"
+        href="https://www.google.com/maps/dir/?api=1&destination=${customer.Latitude},${customer.Longitude}"
+        style="
+        display:inline-block;
+        background:#1976D2;
+        color:white;
+        padding:8px 12px;
+        border-radius:8px;
+        text-decoration:none;
+        margin-left:8px;
+        ">
+        🧭 Navigate
+        </a>
+
+    </div>
+`)
+.on("popupopen", function(){
+
+    showDistance(customer);
+
+});
 
         markers.push(marker);
 
