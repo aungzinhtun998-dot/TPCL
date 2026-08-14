@@ -839,7 +839,6 @@ function showTirePanel(
             "listContent"
         );
 
-
     if (!content) return;
 
 
@@ -874,32 +873,39 @@ function showTirePanel(
     `;
 
 
-    const positions = [
-        "1P",
-        "2P",
-        "3P",
-        "4P",
-        "5P",
-        "6P",
-        "7P",
-        "8P",
-        "9P",
-        "10P"
-    ];
+    // ==================================================
+    // NO TIRE DATA
+    // ==================================================
+
+    if (!data || data.length === 0) {
+
+        html += `
+
+            <div
+                style="
+                padding:15px;
+                background:#f5f5f5;
+                border-radius:10px;
+                text-align:center;
+                color:#777;
+                ">
+
+                🛞 No Tire Data
+
+            </div>
+
+        `;
+
+    }
 
 
-    positions.forEach(position => {
+    // ==================================================
+    // SHOW ONLY TIRES THAT EXIST
+    // ==================================================
 
-        const tire =
-            data.find(
-                t =>
-                    String(
-                        t.Position
-                    ) === position
-            );
+    if (data && data.length > 0) {
 
-
-        if (tire) {
+        data.forEach(tire => {
 
             const inspectionCount =
                 inspections.filter(
@@ -924,7 +930,9 @@ function showTirePanel(
                     )">
 
                     <b>
-                        ${position}
+                        ${escapeHTML(
+                            tire.Position
+                        )}
                         —
                         ${escapeHTML(
                             tire.Tire_ID
@@ -968,31 +976,9 @@ function showTirePanel(
 
             `;
 
-        } else {
+        });
 
-            html += `
-
-                <div
-                    class="customer-item"
-                    style="
-                    opacity:.5;
-                    ">
-
-                    <b>
-                        ${position}
-                    </b>
-
-                    <br>
-
-                    No Tire
-
-                </div>
-
-            `;
-
-        }
-
-    });
+    }
 
 
     html += `</div>`;
@@ -1005,7 +991,6 @@ function showTirePanel(
     openPanel();
 
 }
-
 
 // ======================================================
 // BACK TO VEHICLES
