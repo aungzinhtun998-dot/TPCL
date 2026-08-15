@@ -368,15 +368,22 @@ function showCustomers(data = customers) {
 
 
         marker.on(
-            "popupopen",
-            function() {
+    "popupopen",
+    function() {
 
-                showDistance(
-                    customer
-                );
+        showDistance(customer);
 
-            }
-        );
+        // GPS ရလာဖို့ အချိန်နည်းနည်းပေးပြီး ထပ်တွက်
+        setTimeout(function() {
+            showDistance(customer);
+        }, 500);
+
+        setTimeout(function() {
+            showDistance(customer);
+        }, 1500);
+
+    }
+);
 
 
         markers.push(marker);
