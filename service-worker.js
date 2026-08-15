@@ -1,4 +1,4 @@
-const CACHE_NAME = "tpcl-v9";
+const CACHE_NAME = "tpcl-v10";
 
 const APP_FILES = [
     "./",
@@ -11,7 +11,6 @@ const APP_FILES = [
 ];
 
 
-// Install
 self.addEventListener("install", event => {
 
     event.waitUntil(
@@ -30,7 +29,6 @@ self.addEventListener("install", event => {
 });
 
 
-// Activate
 self.addEventListener("activate", event => {
 
     event.waitUntil(
@@ -41,9 +39,13 @@ self.addEventListener("activate", event => {
 
                 cacheNames.map(cacheName => {
 
-                    if(cacheName !== CACHE_NAME){
+                    if (
+                        cacheName !== CACHE_NAME
+                    ) {
 
-                        return caches.delete(cacheName);
+                        return caches.delete(
+                            cacheName
+                        );
 
                     }
 
@@ -60,7 +62,6 @@ self.addEventListener("activate", event => {
 });
 
 
-// Fetch
 self.addEventListener("fetch", event => {
 
     event.respondWith(
@@ -68,13 +69,20 @@ self.addEventListener("fetch", event => {
         caches.match(event.request)
             .then(cachedResponse => {
 
-                if(cachedResponse){
+                if (cachedResponse) {
 
                     return cachedResponse;
 
                 }
 
                 return fetch(event.request);
+
+            })
+            .catch(() => {
+
+                return caches.match(
+                    "./index.html"
+                );
 
             })
 
