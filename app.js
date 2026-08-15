@@ -67,27 +67,35 @@ if (navigator.geolocation) {
 
         function(position) {
 
-            userLat =
-                position.coords.latitude;
+    userLat = position.coords.latitude;
+    userLng = position.coords.longitude;
 
-            userLng =
-                position.coords.longitude;
+    L.marker([
+        userLat,
+        userLng
+    ])
+    .addTo(map)
+    .bindPopup("📍 Your Current Location");
 
-            L.marker([
-                userLat,
-                userLng
-            ])
-            .addTo(map)
-            .bindPopup(
-                "📍 Your Current Location"
-            );
+    map.setView(
+        [userLat, userLng],
+        11
+    );
 
-            map.setView(
-                [userLat, userLng],
-                11
-            );
+    // Popup ဖွင့်ထားပြီးသားဆို Distance ကို update လုပ်မယ်
+    map.eachLayer(function(layer) {
 
-        },
+        if (
+            layer instanceof L.Marker &&
+            layer.isPopupOpen &&
+            layer.isPopupOpen()
+        ) {
+            layer.fire("popupopen");
+        }
+
+    });
+
+}
 
         function() {
 
