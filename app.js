@@ -347,22 +347,20 @@ function showCustomers(data = customers) {
                 </a>
 
                 <a
-                    target="_blank"
-                    href="
-                    https://www.google.com/maps/dir/?api=1
-                    &destination=${lat},${lng}
-                    "
-                    style="
-                    display:inline-block;
-                    background:#1976D2;
-                    color:white;
-                    padding:8px 12px;
-                    border-radius:8px;
-                    text-decoration:none;
-                    margin-left:8px;
-                    ">
-                    🧭 Navigate
-                </a>
+    target="_blank"
+    rel="noopener"
+    href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}"
+    style="
+    display:inline-block;
+    background:#1976D2;
+    color:white;
+    padding:8px 12px;
+    border-radius:8px;
+    text-decoration:none;
+    margin-left:8px;
+    ">
+    🧭 Navigate
+</a>
 
             </div>
 
