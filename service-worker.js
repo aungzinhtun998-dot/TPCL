@@ -1,4 +1,4 @@
-const CACHE_NAME = "tpcl-v12";
+const CACHE_NAME = "tpcl-v11";
 
 const APP_FILES = [
     "./",
@@ -25,14 +25,6 @@ self.addEventListener("install", event => {
                 return cache.addAll(APP_FILES);
 
             })
-            .catch(error => {
-
-                console.error(
-                    "Cache install failed:",
-                    error
-                );
-
-            })
 
     );
 
@@ -49,35 +41,27 @@ self.addEventListener("activate", event => {
 
     event.waitUntil(
 
-        caches.keys()
-            .then(cacheNames => {
+        caches.keys().then(cacheNames => {
 
-                return Promise.all(
+            return Promise.all(
 
-                    cacheNames.map(cacheName => {
+                cacheNames.map(cacheName => {
 
-                        if (
-                            cacheName !== CACHE_NAME
-                        ) {
+                    if (cacheName !== CACHE_NAME) {
 
-                            return caches.delete(
-                                cacheName
-                            );
+                        return caches.delete(cacheName);
 
-                        }
+                    }
 
-                    })
+                })
 
-                );
+            );
 
-            })
-            .then(() => {
-
-                return self.clients.claim();
-
-            })
+        })
 
     );
+
+    self.clients.claim();
 
 });
 
@@ -88,25 +72,63 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
 
-    const request =
-        event.request;
+    const request = event.request;
 
-    // Only handle GET requests
+    // Only handle GET
     if (request.method !== "GET") {
         return;
     }
 
+
+    // HTML → Network first
+    // This prevents old index.html from getting stuck.
+    if (request.mode === "navigate") {
+
+        event.respondWith(
+
+            fetch(request)
+                .then(response => {
+
+                    const copy = response.clone();
+
+                    caches.open(CACHE_NAME)
+                        .then(cache => {
+                            cache.put(request, copy);
+                        });
+
+                    return response;
+
+                })
+                .catch(() => {
+
+                    return caches.match(request);
+
+                })
+
+        );
+
+        return;
+    }
+
+
+    // CSS / JS / images → Cache first
     event.respondWith(
 
-        fetch(request)
-            .then(response => {
+        caches.match(request)
+            .then(cachedResponse => {
 
-                return response;
+                if (cachedResponse) {
 
-            })
-            .catch(() => {
+                    return cachedResponse;
 
-                return caches.match(request);
+                }
+
+                return fetch(request)
+                    .then(response => {
+
+                        return response;
+
+                    });
 
             })
 
