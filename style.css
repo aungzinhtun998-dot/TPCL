@@ -1,198 +1,395 @@
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+/* ======================================================
+   TPCL - CLEAN STYLE
+   ====================================================== */
+
+* {
+    box-sizing: border-box;
 }
 
-html,body{
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    font-family:Arial,Helvetica,sans-serif;
-    background:#f5f5f5;
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #f5f5f5;
 }
 
-/* ===========================
+/* ======================================================
    MAP
-=========================== */
+   ====================================================== */
 
-#map{
-    position:fixed;
-    top:0;
-    left:0;
-    width:100%;
-    height:100%;
-    z-index:1;
+#map {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    background: #ddd;
 }
 
-/* ===========================
-   SEARCH
-=========================== */
+/* Make sure Leaflet fills the map correctly */
 
-.search-box{
-
-    position:fixed;
-
-    top:15px;
-    left:15px;
-    right:15px;
-
-    z-index:1000;
-
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+    background: #ddd;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-.search-box input{
+/* ======================================================
+   SEARCH BOX
+   ====================================================== */
 
-    width:100%;
-
-    height:50px;
-
-    padding:0 18px;
-
-    border:none;
-
-    border-radius:30px;
-
-    font-size:16px;
-
-    outline:none;
-
-    background:white;
-
-    box-shadow:0 4px 12px rgba(0,0,0,.25);
-
+.search-box {
+    position: fixed;
+    top: 16px;
+    left: 20px;
+    right: 20px;
+    z-index: 1000;
 }
 
-/* ===========================
+#searchInput {
+    width: 100%;
+    height: 56px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 30px;
+    outline: none;
+
+    background: rgba(255, 255, 255, 0.97);
+
+    font-size: 16px;
+    color: #333;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.18);
+}
+
+#searchInput::placeholder {
+    color: #777;
+}
+
+#searchInput:focus {
+    box-shadow:
+        0 3px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* ======================================================
    FLOATING BUTTONS
-=========================== */
+   ====================================================== */
 
 #gpsBtn,
-#listBtn{
+#listBtn {
+    position: fixed;
+    right: 20px;
 
-    position:fixed;
+    width: 58px;
+    height: 58px;
 
-    width:58px;
-    height:58px;
+    border: none;
+    border-radius: 50%;
 
-    border:none;
+    background: #0b7285;
+    color: white;
 
-    border-radius:50%;
+    font-size: 25px;
 
-    background:#0B7285;
+    z-index: 1100;
 
-    color:white;
+    cursor: pointer;
 
-    font-size:24px;
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.25);
 
-    cursor:pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    box-shadow:0 5px 15px rgba(0,0,0,.30);
+    -webkit-tap-highlight-color: transparent;
+}
 
-    z-index:1000;
+#gpsBtn {
+    bottom: 105px;
+}
+
+#listBtn {
+    bottom: 30px;
+}
+
+#gpsBtn:hover,
+#listBtn:hover {
+    background: #095c6a;
+}
+
+#gpsBtn:active,
+#listBtn:active {
+    transform: scale(0.95);
+}
+
+/* ======================================================
+   CUSTOMER LIST / BOTTOM SHEET
+   ====================================================== */
+
+#customerList {
+    position: fixed;
+
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    width: 100%;
+    max-height: 70vh;
+
+    background: #ffffff;
+
+    border-radius: 20px 20px 0 0;
+
+    z-index: 1200;
+
+    box-shadow:
+        0 -4px 20px rgba(0, 0, 0, 0.20);
+
+    transform: translateY(100%);
+
+    transition:
+        transform 0.25s ease;
+
+    overflow: hidden;
+}
+
+#customerList.show {
+    transform: translateY(0);
+}
+
+/* ======================================================
+   SHEET HEADER
+   ====================================================== */
+
+.sheet-header {
+    position: sticky;
+    top: 0;
+
+    padding: 16px 20px;
+
+    background: white;
+
+    border-bottom: 1px solid #eee;
+
+    z-index: 2;
+}
+
+.sheet-header h3 {
+    margin: 0;
+
+    font-size: 18px;
+    color: #222;
+}
+
+/* ======================================================
+   LIST CONTENT
+   ====================================================== */
+
+#listContent {
+    max-height: calc(70vh - 60px);
+
+    overflow-y: auto;
+
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ======================================================
+   CUSTOMER / VEHICLE / TIRE ITEM
+   ====================================================== */
+
+.customer-item {
+    margin: 10px 14px;
+    padding: 14px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e5e5;
+    border-radius: 12px;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 2px 7px rgba(0, 0, 0, 0.08);
+
+    transition:
+        background 0.15s ease,
+        transform 0.1s ease;
+}
+
+.customer-item:hover {
+    background: #f7fafa;
+}
+
+.customer-item:active {
+    transform: scale(0.99);
+    background: #eef8fa;
+}
+
+.customer-item b {
+    color: #222;
+}
+
+/* ======================================================
+   LEAFLET POPUP
+   ====================================================== */
+
+.leaflet-popup-content-wrapper {
+    border-radius: 14px;
+}
+
+.leaflet-popup-content {
+    margin: 14px;
+    line-height: 1.5;
+}
+
+.leaflet-popup-close-button {
+    font-size: 20px !important;
+}
+
+/* ======================================================
+   POPUP BUTTONS
+   ====================================================== */
+
+.leaflet-popup-content button {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+/* ======================================================
+   SCROLLBAR
+   ====================================================== */
+
+#listContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+#listContent::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+#listContent::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 10px;
+}
+
+#listContent::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* ======================================================
+   MOBILE
+   ====================================================== */
+
+@media (max-width: 600px) {
+
+    .search-box {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+    }
+
+    #searchInput {
+        height: 52px;
+        font-size: 15px;
+    }
+
+    #gpsBtn,
+    #listBtn {
+        right: 16px;
+        width: 54px;
+        height: 54px;
+        font-size: 23px;
+    }
+
+    #gpsBtn {
+        bottom: 96px;
+    }
+
+    #listBtn {
+        bottom: 28px;
+    }
+
+    #customerList {
+        max-height: 75vh;
+    }
+
+    #listContent {
+        max-height: calc(75vh - 60px);
+    }
 
 }
 
-#gpsBtn{
+/* ======================================================
+   SMALL PHONES
+   ====================================================== */
 
-    right:20px;
-    bottom:95px;
+@media (max-width: 380px) {
 
-}
+    .search-box {
+        left: 10px;
+        right: 10px;
+    }
 
-#listBtn{
+    #gpsBtn,
+    #listBtn {
+        right: 12px;
+        width: 50px;
+        height: 50px;
+    }
 
-    right:20px;
-    bottom:20px;
+    #gpsBtn {
+        bottom: 88px;
+    }
 
-}
-
-/* ===========================
-   BOTTOM SHEET
-=========================== */
-
-#customerList{
-
-    position:fixed;
-
-    left:0;
-    bottom:-75%;
-
-    width:100%;
-    height:75%;
-
-    background:white;
-
-    border-radius:22px 22px 0 0;
-
-    transition:.35s ease;
-
-    z-index:999;
-
-    overflow-y:auto;
-
-    box-shadow:0 -5px 20px rgba(0,0,0,.25);
+    #listBtn {
+        bottom: 22px;
+    }
 
 }
 
-#customerList.show{
+/* ======================================================
+   SAFE AREA - MOBILE
+   ====================================================== */
 
-    bottom:0;
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
 
-}
+    #listBtn {
+        bottom: calc(22px + env(safe-area-inset-bottom));
+    }
 
-/* ===========================
-   HEADER
-=========================== */
-
-.sheet-header{
-
-    position:sticky;
-
-    top:0;
-
-    background:white;
-
-    padding:18px;
-
-    text-align:center;
-
-    border-bottom:1px solid #eee;
-
-    font-size:18px;
-
-    font-weight:bold;
+    #gpsBtn {
+        bottom: calc(
+            88px + env(safe-area-inset-bottom)
+        );
+    }
 
 }
 
-/* ===========================
-   CUSTOMER ITEM
-=========================== */
+/* ======================================================
+   PREVENT TEXT SELECTION ON BUTTONS
+   ====================================================== */
 
-.customer-item{
-
-    padding:16px;
-
-    border-bottom:1px solid #eee;
-
-    cursor:pointer;
-
+button {
+    -webkit-user-select: none;
+    user-select: none;
 }
 
-.customer-item:hover{
+/* ======================================================
+   LEAFLET CONTROLS
+   ====================================================== */
 
-    background:#f4f4f4;
-
+.leaflet-control-zoom {
+    margin-top: 85px !important;
 }
 
-.customer-item b{
-
-    font-size:16px;
-
-}
-
-.customer-item small{
-
-    color:#777;
-
+.leaflet-control-attribution {
+    font-size: 10px;
 }
