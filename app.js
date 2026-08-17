@@ -1,11 +1,12 @@
 // ======================================================
-// TPCL APP - GitHub Pages Version
+// TPCL APP - CLEAN VERSION
 // Customer → Vehicle → Tire → Inspection
+// GitHub Pages / PWA
 // ======================================================
 
 
 // ======================================================
-// GOOGLE APPS SCRIPT API
+// API
 // ======================================================
 
 const API_BASE =
@@ -25,7 +26,7 @@ const INSPECTION_API =
 
 
 // ======================================================
-// GLOBAL
+// GLOBAL DATA
 // ======================================================
 
 let map = null;
@@ -40,22 +41,18 @@ let markers = [];
 let userLat = null;
 let userLng = null;
 
-let userLocationMarker = null;
-
 let listOpen = false;
 
 
 // ======================================================
-// START APP
+// MAP INITIALIZE
 // ======================================================
 
 document.addEventListener("DOMContentLoaded", function () {
 
     initMap();
-
-    initGPS();
-
     loadAllData();
+    initGPS();
 
 });
 
@@ -70,12 +67,9 @@ function initMap() {
         document.getElementById("map");
 
     if (!mapElement) {
-
         console.error("Map element not found.");
-
         return;
     }
-
 
     map = L.map("map", {
         zoomControl: true
@@ -89,20 +83,19 @@ function initMap() {
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
             maxZoom: 19,
-            attribution:
-                "&copy; OpenStreetMap contributors"
+            attribution: "&copy; OpenStreetMap contributors"
         }
     ).addTo(map);
 
 
-    // Fix Leaflet rendering when container changes size
+    // Fix Leaflet rendering on GitHub Pages
     setTimeout(function () {
 
         if (map) {
             map.invalidateSize();
         }
 
-    }, 300);
+    }, 500);
 
 }
 
@@ -116,7 +109,7 @@ function initGPS() {
     if (!navigator.geolocation) {
 
         console.log(
-            "GPS is not supported."
+            "Geolocation is not supported."
         );
 
         return;
@@ -127,17 +120,36 @@ function initGPS() {
 
         function (position) {
 
-            setUserLocation(
-                position.coords.latitude,
-                position.coords.longitude
+            userLat =
+                position.coords.latitude;
+
+            userLng =
+                position.coords.longitude;
+
+
+            console.log(
+                "GPS:",
+                userLat,
+                userLng
             );
+
+
+            L.marker([
+                userLat,
+                userLng
+            ])
+            .addTo(map)
+            .bindPopup(
+                "📍 Your Current Location"
+            );
+
 
         },
 
         function (error) {
 
             console.log(
-                "GPS permission:",
+                "GPS unavailable:",
                 error.message
             );
 
@@ -150,63 +162,6 @@ function initGPS() {
         }
 
     );
-
-}
-
-
-// ======================================================
-// SET USER LOCATION
-// ======================================================
-
-function setUserLocation(lat, lng) {
-
-    userLat = Number(lat);
-    userLng = Number(lng);
-
-
-    if (
-        !Number.isFinite(userLat) ||
-        !Number.isFinite(userLng)
-    ) {
-
-        return;
-    }
-
-
-    if (userLocationMarker) {
-
-        map.removeLayer(
-            userLocationMarker
-        );
-
-    }
-
-
-    userLocationMarker =
-        L.marker([
-            userLat,
-            userLng
-        ])
-        .addTo(map)
-        .bindPopup(
-            "📍 Your Current Location"
-        );
-
-
-    // Do not automatically zoom every time.
-    // Only initial GPS position.
-    if (map) {
-
-        map.setView(
-            [userLat, userLng],
-            11
-        );
-
-    }
-
-
-    // Update any open distance
-    refreshDistances();
 
 }
 
@@ -231,37 +186,41 @@ function goCurrentLocation() {
 
         function (position) {
 
-            setUserLocation(
-                position.coords.latitude,
-                position.coords.longitude
-            );
+            userLat =
+                position.coords.latitude;
 
-            map.setView(
-                [
-                    position.coords.latitude,
-                    position.coords.longitude
-                ],
-                15,
-                {
-                    animate: true
-                }
-            );
+            userLng =
+                position.coords.longitude;
+
+
+            if (map) {
+
+                map.setView(
+                    [
+                        userLat,
+                        userLng
+                    ],
+                    15,
+                    {
+                        animate: true
+                    }
+                );
+
+            }
 
         },
 
-        function (error) {
+        function () {
 
             alert(
                 "Unable to get your current location."
             );
 
-            console.error(error);
-
         },
 
         {
             enableHighAccuracy: true,
-            timeout: 15000,
+            timeout: 10000,
             maximumAge: 0
         }
 
@@ -278,39 +237,28 @@ async function loadAllData() {
 
     try {
 
-        const results =
+        const responses =
             await Promise.all([
 
-                fetchJSON(CUSTOMER_API),
-
-                fetchJSON(VEHICLE_API),
-
-                fetchJSON(TIRE_API),
-
-                fetchJSON(INSPECTION_API)
+                fetch(CUSTOMER_API),
+                fetch(VEHICLE_API),
+                fetch(TIRE_API),
+                fetch(INSPECTION_API)
 
             ]);
 
 
         customers =
-            Array.isArray(results[0])
-                ? results[0]
-                : [];
+            await responses[0].json();
 
         vehicles =
-            Array.isArray(results[1])
-                ? results[1]
-                : [];
+            await responses[1].json();
 
         tires =
-            Array.isArray(results[2])
-                ? results[2]
-                : [];
+            await responses[2].json();
 
         inspections =
-            Array.isArray(results[3])
-                ? results[3]
-                : [];
+            await responses[3].json();
 
 
         console.log(
@@ -336,49 +284,30 @@ async function loadAllData() {
 
         showCustomers();
 
-    }
 
+    }
     catch (error) {
 
         console.error(
-            "TPCL DATA ERROR:",
+            "TPCL data loading error:",
             error
         );
 
 
-        alert(
-            "Cannot load TPCL data."
-        );
+        const container =
+            document.getElementById(
+                "listContent"
+            );
+
+
+        if (container) {
+
+            container.innerHTML =
+                "<p>❌ Cannot load TPCL data.</p>";
+
+        }
 
     }
-
-}
-
-
-// ======================================================
-// FETCH JSON
-// ======================================================
-
-async function fetchJSON(url) {
-
-    const response =
-        await fetch(url, {
-            method: "GET",
-            cache: "no-cache"
-        });
-
-
-    if (!response.ok) {
-
-        throw new Error(
-            "HTTP Error " +
-            response.status
-        );
-
-    }
-
-
-    return await response.json();
 
 }
 
@@ -392,13 +321,6 @@ function showCustomers(
 ) {
 
     clearMarkers();
-
-
-    if (!Array.isArray(data)) {
-
-        data = [];
-
-    }
 
 
     data.forEach(function (customer) {
@@ -426,16 +348,102 @@ function showCustomers(
             L.marker([
                 lat,
                 lng
-            ])
-            .addTo(map);
+            ]).addTo(map);
+
+
+        const customerID =
+            String(
+                customer.Customer_ID || ""
+            );
+
+
+        const popupHTML = `
+
+            <div class="customer-popup">
+
+                <h3>
+                    ${escapeHTML(
+                        customer.Customer_Name
+                    )}
+                </h3>
+
+                <div>
+                    🌎 <b>Region:</b>
+                    ${escapeHTML(
+                        customer.Region
+                    )}
+                </div>
+
+                <div>
+                    📍 <b>Township:</b>
+                    ${escapeHTML(
+                        customer.Township
+                    )}
+                </div>
+
+                <div>
+                    🚛 <b>Vehicles:</b>
+                    ${escapeHTML(
+                        customer.Vehicle_Count
+                    )}
+                </div>
+
+                <div>
+                    🏷 <b>Brand:</b>
+                    ${escapeHTML(
+                        customer.Brand
+                    )}
+                </div>
+
+                <div
+                    id="distance-${safeID(customerID)}"
+                    class="distance-text"
+                >
+                    📏 Checking location...
+                </div>
+
+                <button
+                    class="popup-main-button"
+                    onclick="openCustomerVehicles('${escapeJS(customerID)}')"
+                >
+                    🚛 View Vehicles
+                </button>
+
+                <div class="popup-buttons">
+
+                    ${
+                        customer.Phone_Number
+                        ?
+                        `
+                        <a
+                            href="tel:${escapeHTML(customer.Phone_Number)}"
+                            class="call-button"
+                        >
+                            📞 Call
+                        </a>
+                        `
+                        :
+                        ""
+                    }
+
+                    <a
+                        href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}"
+                        target="_blank"
+                        rel="noopener"
+                        class="navigate-button"
+                    >
+                        🧭 Navigate
+                    </a>
+
+                </div>
+
+            </div>
+
+        `;
 
 
         marker.bindPopup(
-            createCustomerPopup(
-                customer,
-                lat,
-                lng
-            )
+            popupHTML
         );
 
 
@@ -443,7 +451,7 @@ function showCustomers(
             "popupopen",
             function () {
 
-                updateCustomerDistance(
+                updateDistance(
                     customer
                 );
 
@@ -451,340 +459,36 @@ function showCustomers(
         );
 
 
-        markers.push(marker);
+        markers.push(
+            marker
+        );
 
     });
 
 
     buildCustomerList(data);
 
-
-    setTimeout(function () {
-
-        if (map) {
-
-            map.invalidateSize();
-
-        }
-
-    }, 200);
-
 }
 
 
 // ======================================================
-// CUSTOMER POPUP
+// CLEAR MARKERS
 // ======================================================
 
-function createCustomerPopup(
-    customer,
-    lat,
-    lng
-) {
+function clearMarkers() {
 
-    const customerID =
-        escapeJS(
-            customer.Customer_ID
-        );
+    markers.forEach(
+        function (marker) {
 
-
-    const distanceID =
-        "distance-" +
-        safeID(
-            customer.Customer_ID
-        );
-
-
-    const phone =
-        customer.Phone_Number
-        ? String(customer.Phone_Number)
-        : "";
-
-
-    const navigateURL =
-        "https://www.google.com/maps/dir/?api=1&destination=" +
-        encodeURIComponent(
-            lat + "," + lng
-        );
-
-
-    return `
-
-        <div style="
-            min-width:240px;
-            max-width:300px;
-        ">
-
-            <h3 style="
-                margin:0 0 8px 0;
-            ">
-                ${escapeHTML(
-                    customer.Customer_Name
-                )}
-            </h3>
-
-
-            🌏 <b>Region:</b>
-            ${escapeHTML(
-                customer.Region
-            )}
-
-            <br>
-
-
-            📍 <b>Township:</b>
-            ${escapeHTML(
-                customer.Township
-            )}
-
-            <br>
-
-
-            🚛 <b>Vehicles:</b>
-            ${escapeHTML(
-                customer.Vehicle_Count
-            )}
-
-            <br>
-
-
-            🏷 <b>Brand:</b>
-            ${escapeHTML(
-                customer.Brand
-            )}
-
-            <br>
-
-
-            <span id="${distanceID}">
-                📏 Calculating...
-            </span>
-
-
-            <br><br>
-
-
-            <button
-                onclick="openCustomerVehicles('${customerID}')"
-                style="
-                    width:100%;
-                    padding:11px;
-                    border:0;
-                    border-radius:8px;
-                    background:#1976D2;
-                    color:white;
-                    font-size:15px;
-                    cursor:pointer;
-                "
-            >
-                🚛 View Vehicles
-            </button>
-
-
-            <div style="
-                margin-top:12px;
-            ">
-
-
-                ${
-                    phone
-                    ?
-                    `
-                    <a
-                        href="tel:${escapeHTML(phone)}"
-                        style="
-                            display:inline-block;
-                            background:#28a745;
-                            color:white;
-                            padding:9px 13px;
-                            border-radius:8px;
-                            text-decoration:none;
-                            margin-right:8px;
-                        "
-                    >
-                        📞 Call
-                    </a>
-                    `
-                    :
-                    ""
-                }
-
-
-                <a
-                    target="_blank"
-                    rel="noopener"
-                    href="${navigateURL}"
-                    style="
-                        display:inline-block;
-                        background:#1976D2;
-                        color:white;
-                        padding:9px 13px;
-                        border-radius:8px;
-                        text-decoration:none;
-                    "
-                >
-                    🧭 Navigate
-                </a>
-
-
-            </div>
-
-        </div>
-
-    `;
-
-}
-
-
-// ======================================================
-// UPDATE DISTANCE
-// ======================================================
-
-function updateCustomerDistance(
-    customer
-) {
-
-    const id =
-        "distance-" +
-        safeID(
-            customer.Customer_ID
-        );
-
-
-    const element =
-        document.getElementById(id);
-
-
-    if (!element) {
-
-        return;
-
-    }
-
-
-    if (
-        userLat === null ||
-        userLng === null
-    ) {
-
-        element.innerHTML =
-            "📏 Distance unavailable — GPS off";
-
-        return;
-
-    }
-
-
-    const lat =
-        Number(customer.Latitude);
-
-    const lng =
-        Number(customer.Longitude);
-
-
-    if (
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng)
-    ) {
-
-        element.innerHTML =
-            "📏 Distance unavailable";
-
-        return;
-
-    }
-
-
-    const distance =
-        calculateDistance(
-            userLat,
-            userLng,
-            lat,
-            lng
-        );
-
-
-    element.innerHTML =
-        "📏 Distance: " +
-        distance.toFixed(1) +
-        " km";
-
-}
-
-
-// ======================================================
-// REFRESH DISTANCES
-// ======================================================
-
-function refreshDistances() {
-
-    customers.forEach(
-        function (customer) {
-
-            updateCustomerDistance(
-                customer
-            );
+            if (map) {
+                map.removeLayer(marker);
+            }
 
         }
     );
 
-}
 
-
-// ======================================================
-// DISTANCE CALCULATION
-// ======================================================
-
-function calculateDistance(
-    lat1,
-    lng1,
-    lat2,
-    lng2
-) {
-
-    const R = 6371;
-
-    const dLat =
-        toRadians(lat2 - lat1);
-
-    const dLng =
-        toRadians(lng2 - lng1);
-
-
-    const a =
-        Math.sin(dLat / 2) *
-        Math.sin(dLat / 2) +
-
-        Math.cos(
-            toRadians(lat1)
-        ) *
-
-        Math.cos(
-            toRadians(lat2)
-        ) *
-
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-
-    const c =
-        2 *
-        Math.atan2(
-            Math.sqrt(a),
-            Math.sqrt(1 - a)
-        );
-
-
-    return R * c;
-
-}
-
-
-function toRadians(value) {
-
-    return value *
-        Math.PI /
-        180;
+    markers = [];
 
 }
 
@@ -804,6 +508,14 @@ function buildCustomerList(
 
 
     if (!container) {
+        return;
+    }
+
+
+    if (data.length === 0) {
+
+        container.innerHTML =
+            "<p>No customers found.</p>";
 
         return;
 
@@ -830,9 +542,7 @@ function buildCustomerList(
                     focusCustomer(
                         ${lat},
                         ${lng},
-                        '${escapeJS(
-                            customer.Customer_ID
-                        )}'
+                        '${escapeJS(customer.Customer_ID)}'
                     )
                 "
             >
@@ -845,7 +555,7 @@ function buildCustomerList(
 
                 <br>
 
-                🌏
+                🌎
                 ${escapeHTML(
                     customer.Region
                 )}
@@ -897,62 +607,45 @@ function focusCustomer(
     }
 
 
-    map.setView(
-        [lat, lng],
-        16,
-        {
-            animate: true
-        }
-    );
+    if (map) {
 
-
-    const customer =
-        customers.find(
-            function (c) {
-
-                return String(
-                    c.Customer_ID
-                ) === String(
-                    customerID
-                );
-
+        map.setView(
+            [
+                lat,
+                lng
+            ],
+            16,
+            {
+                animate: true
             }
         );
-
-
-    if (!customer) {
-
-        return;
 
     }
 
 
-    markers.forEach(
-        function (marker) {
+    const marker =
+        markers.find(function (m) {
 
-            const markerLat =
-                marker.getLatLng().lat;
+            const position =
+                m.getLatLng();
 
-            const markerLng =
-                marker.getLatLng().lng;
-
-
-            if (
+            return (
                 Math.abs(
-                    markerLat - lat
+                    position.lat - lat
                 ) < 0.000001 &&
-
                 Math.abs(
-                    markerLng - lng
+                    position.lng - lng
                 ) < 0.000001
-            ) {
+            );
 
-                marker.openPopup();
+        });
 
-            }
 
-        }
-    );
+    if (marker) {
+
+        marker.openPopup();
+
+    }
 
 
     closePanel();
@@ -961,7 +654,7 @@ function focusCustomer(
 
 
 // ======================================================
-// SEARCH
+// SEARCH CUSTOMER
 // ======================================================
 
 function searchCustomer() {
@@ -973,9 +666,7 @@ function searchCustomer() {
 
 
     if (!input) {
-
         return;
-
     }
 
 
@@ -985,7 +676,7 @@ function searchCustomer() {
             .toLowerCase();
 
 
-    if (keyword === "") {
+    if (!keyword) {
 
         showCustomers();
 
@@ -998,53 +689,34 @@ function searchCustomer() {
         customers.filter(
             function (customer) {
 
-                return (
+                return [
 
-                    String(
-                        customer.Customer_ID || ""
+                    customer.Customer_ID,
+                    customer.Customer_Name,
+                    customer.Region,
+                    customer.Township,
+                    customer.Brand
+
+                ]
+                .some(function (value) {
+
+                    return String(
+                        value || ""
                     )
                     .toLowerCase()
-                    .includes(keyword)
+                    .includes(
+                        keyword
+                    );
 
-                    ||
-
-                    String(
-                        customer.Customer_Name || ""
-                    )
-                    .toLowerCase()
-                    .includes(keyword)
-
-                    ||
-
-                    String(
-                        customer.Region || ""
-                    )
-                    .toLowerCase()
-                    .includes(keyword)
-
-                    ||
-
-                    String(
-                        customer.Township || ""
-                    )
-                    .toLowerCase()
-                    .includes(keyword)
-
-                    ||
-
-                    String(
-                        customer.Brand || ""
-                    )
-                    .toLowerCase()
-                    .includes(keyword)
-
-                );
+                });
 
             }
         );
 
 
-    showCustomers(filtered);
+    showCustomers(
+        filtered
+    );
 
 }
 
@@ -1072,9 +744,7 @@ function openCustomerVehicles(
 
 
     if (!customer) {
-
         return;
-
     }
 
 
@@ -1116,27 +786,20 @@ function showVehiclePanel(
 
 
     if (!content) {
-
         return;
-
     }
 
 
     let html = `
 
-        <div style="padding:12px;">
+        <div class="panel-content">
 
             <button
+                class="back-button"
                 onclick="showCustomers()"
-                style="
-                    padding:8px 12px;
-                    border:0;
-                    border-radius:8px;
-                "
             >
                 ← Customers
             </button>
-
 
             <h3>
                 🚛
@@ -1157,76 +820,78 @@ function showVehiclePanel(
     }
 
 
-    data.forEach(function (vehicle) {
+    data.forEach(
+        function (vehicle) {
 
-        const tireCount =
-            tires.filter(
-                function (t) {
+            const tireCount =
+                tires.filter(
+                    function (tire) {
 
-                    return String(
-                        t.Vehicle_ID
-                    ) === String(
-                        vehicle.Vehicle_ID
-                    );
-
-                }
-            ).length;
-
-
-        html += `
-
-            <div
-                class="customer-item"
-                onclick="
-                    openVehicleTires(
-                        '${escapeJS(
+                        return String(
+                            tire.Vehicle_ID
+                        ) === String(
                             vehicle.Vehicle_ID
-                        )}'
-                    )
-                "
-            >
+                        );
 
-                <b>
-                    🚛
+                    }
+                ).length;
+
+
+            html += `
+
+                <div
+                    class="customer-item"
+                    onclick="
+                        openVehicleTires(
+                            '${escapeJS(vehicle.Vehicle_ID)}'
+                        )
+                    "
+                >
+
+                    <b>
+                        🚛
+                        ${escapeHTML(
+                            vehicle.Vehicle_Number
+                        )}
+                    </b>
+
+                    <br>
+
+                    🆔
                     ${escapeHTML(
-                        vehicle.Vehicle_Number
+                        vehicle.Vehicle_ID
                     )}
-                </b>
 
-                <br>
+                    <br>
 
-                🆔
-                ${escapeHTML(
-                    vehicle.Vehicle_ID
-                )}
+                    🚚
+                    ${escapeHTML(
+                        vehicle.Vehicle_Type
+                    )}
 
-                <br>
+                    <br>
 
-                🚚
-                ${escapeHTML(
-                    vehicle.Vehicle_Type
-                )}
+                    🛣
+                    ${escapeHTML(
+                        vehicle.Regular_Route
+                    )}
 
-                <br>
+                    <br>
 
-                🛣
-                ${escapeHTML(
-                    vehicle.Regular_Route
-                )}
+                    🛞 Tires:
+                    ${tireCount}
 
-                <br>
+                </div>
 
-                🛞 Tires:
-                ${tireCount}
+            `;
 
-            </div>
-
-        `;
-
-    });
+        }
+    );
 
 
-    html += `</div>`;
+    html += `
+        </div>
+    `;
 
 
     content.innerHTML =
@@ -1261,18 +926,16 @@ function openVehicleTires(
 
 
     if (!vehicle) {
-
         return;
-
     }
 
 
     const vehicleTires =
         tires.filter(
-            function (t) {
+            function (tire) {
 
                 return String(
-                    t.Vehicle_ID
+                    tire.Vehicle_ID
                 ) === String(
                     vehicleID
                 );
@@ -1305,33 +968,24 @@ function showTirePanel(
 
 
     if (!content) {
-
         return;
-
     }
 
 
     let html = `
 
-        <div style="padding:12px;">
+        <div class="panel-content">
 
             <button
+                class="back-button"
                 onclick="
                     openCustomerVehiclesByVehicle(
-                        '${escapeJS(
-                            vehicle.Vehicle_ID
-                        )}'
+                        '${escapeJS(vehicle.Vehicle_ID)}'
                     )
-                "
-                style="
-                    padding:8px 12px;
-                    border:0;
-                    border-radius:8px;
                 "
             >
                 ← Vehicles
             </button>
-
 
             <h3>
                 🛞 Tires -
@@ -1344,87 +998,8 @@ function showTirePanel(
 
 
     // IMPORTANT:
-    // Only show positions that actually have tires.
-    // "No Tire" will NOT be displayed.
-
-    data.forEach(function (tire) {
-
-        const inspectionCount =
-            inspections.filter(
-                function (i) {
-
-                    return String(
-                        i.Tire_ID
-                    ) === String(
-                        tire.Tire_ID
-                    );
-
-                }
-            ).length;
-
-
-        html += `
-
-            <div
-                class="customer-item"
-                onclick="
-                    openTireInspection(
-                        '${escapeJS(
-                            tire.Tire_ID
-                        )}'
-                    )
-                "
-            >
-
-                <b>
-                    ${escapeHTML(
-                        tire.Position
-                    )}
-                    —
-                    ${escapeHTML(
-                        tire.Tire_ID
-                    )}
-                </b>
-
-                <br>
-
-                🏷
-                ${escapeHTML(
-                    tire.Brand
-                )}
-
-                <br>
-
-                📐
-                ${escapeHTML(
-                    tire.Size
-                )}
-
-                <br>
-
-                🔧
-                ${escapeHTML(
-                    tire.Pattern
-                )}
-
-                <br>
-
-                📅
-                ${escapeHTML(
-                    tire.Installation_Date
-                )}
-
-                <br>
-
-                🔍 Inspections:
-                ${inspectionCount}
-
-            </div>
-
-        `;
-
-    });
-
+    // Only show tires that actually exist.
+    // Empty positions / No Tire are hidden.
 
     if (data.length === 0) {
 
@@ -1435,7 +1010,88 @@ function showTirePanel(
     }
 
 
-    html += `</div>`;
+    data.forEach(
+        function (tire) {
+
+            const inspectionCount =
+                inspections.filter(
+                    function (inspection) {
+
+                        return String(
+                            inspection.Tire_ID
+                        ) === String(
+                            tire.Tire_ID
+                        );
+
+                    }
+                ).length;
+
+
+            html += `
+
+                <div
+                    class="customer-item"
+                    onclick="
+                        openTireInspection(
+                            '${escapeJS(tire.Tire_ID)}'
+                        )
+                    "
+                >
+
+                    <b>
+                        ${escapeHTML(
+                            tire.Position
+                        )}
+                        —
+                        ${escapeHTML(
+                            tire.Tire_ID
+                        )}
+                    </b>
+
+                    <br>
+
+                    🏷
+                    ${escapeHTML(
+                        tire.Brand
+                    )}
+
+                    <br>
+
+                    📐
+                    ${escapeHTML(
+                        tire.Size
+                    )}
+
+                    <br>
+
+                    🔧
+                    ${escapeHTML(
+                        tire.Pattern
+                    )}
+
+                    <br>
+
+                    📅
+                    ${escapeHTML(
+                        tire.Installation_Date
+                    )}
+
+                    <br>
+
+                    🔍 Inspections:
+                    ${inspectionCount}
+
+                </div>
+
+            `;
+
+        }
+    );
+
+
+    html += `
+        </div>
+    `;
 
 
     content.innerHTML =
@@ -1470,9 +1126,7 @@ function openCustomerVehiclesByVehicle(
 
 
     if (!vehicle) {
-
         return;
-
     }
 
 
@@ -1506,19 +1160,17 @@ function openTireInspection(
 
 
     if (!tire) {
-
         return;
-
     }
 
 
     const history =
         inspections
             .filter(
-                function (i) {
+                function (inspection) {
 
                     return String(
-                        i.Tire_ID
+                        inspection.Tire_ID
                     ) === String(
                         tireID
                     );
@@ -1528,12 +1180,10 @@ function openTireInspection(
             .sort(
                 function (a, b) {
 
-                    return String(
+                    return parseDate(
                         b.Inspection_Date
-                    ).localeCompare(
-                        String(
-                            a.Inspection_Date
-                        )
+                    ) - parseDate(
+                        a.Inspection_Date
                     );
 
                 }
@@ -1564,45 +1214,30 @@ function showInspectionPanel(
 
 
     if (!content) {
-
         return;
-
     }
 
 
     let html = `
 
-        <div style="padding:12px;">
+        <div class="panel-content">
 
             <button
+                class="back-button"
                 onclick="
                     openVehicleTiresByTire(
-                        '${escapeJS(
-                            tire.Tire_ID
-                        )}'
+                        '${escapeJS(tire.Tire_ID)}'
                     )
-                "
-                style="
-                    padding:8px 12px;
-                    border:0;
-                    border-radius:8px;
                 "
             >
                 ← Tires
             </button>
 
-
             <h3>
                 🔍 Inspection
             </h3>
 
-
-            <div style="
-                background:#f5f5f5;
-                padding:12px;
-                border-radius:10px;
-                margin-bottom:12px;
-            ">
+            <div class="tire-summary">
 
                 <b>
                     🛞
@@ -1660,79 +1295,83 @@ function showInspectionPanel(
     }
 
 
-    data.forEach(function (item) {
+    data.forEach(
+        function (item) {
 
-        html += `
+            html += `
 
-            <div class="customer-item">
+                <div class="customer-item">
 
-                <b>
-                    🔍
+                    <b>
+                        🔍
+                        ${escapeHTML(
+                            item.Inspection_ID
+                        )}
+                    </b>
+
+                    <br>
+
+                    📅
                     ${escapeHTML(
-                        item.Inspection_ID
+                        item.Inspection_Date
                     )}
-                </b>
 
-                <br>
-
-                📅
-                ${escapeHTML(
-                    item.Inspection_Date
-                )}
-
-                <br><br>
-
-                <b>OTD:</b>
-                ${escapeHTML(
-                    item.OTD
-                )}
-                mm
-
-                <br>
-
-                <b>RTD:</b>
-                ${escapeHTML(
-                    item.RTD
-                )}
-                mm
-
-                <br>
-
-                🚛 Driven:
-                ${escapeHTML(
-                    item["Driven Kilometer"]
-                )}
-                km
-
-                <br>
-
-                📊 Km/mm:
-                ${escapeHTML(
-                    item["Km/mm"]
-                )}
-
-                ${
-                    item.Note
-                    ?
-                    `
                     <br><br>
-                    📝
+
+                    <b>OTD:</b>
                     ${escapeHTML(
-                        item.Note
+                        item.OTD
                     )}
-                    `
-                    :
-                    ""
-                }
+                    mm
 
-            </div>
+                    <br>
 
-        `;
+                    <b>RTD:</b>
+                    ${escapeHTML(
+                        item.RTD
+                    )}
+                    mm
 
-    });
+                    <br>
+
+                    🚛 Driven:
+                    ${escapeHTML(
+                        item["Driven Kilometer"]
+                    )}
+                    km
+
+                    <br>
+
+                    📊 Km/mm:
+                    ${escapeHTML(
+                        item["Km/mm"]
+                    )}
+
+                    ${
+                        item.Note
+                        ?
+                        `
+                        <br><br>
+                        📝
+                        ${escapeHTML(
+                            item.Note
+                        )}
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+
+            `;
+
+        }
+    );
 
 
-    html += `</div>`;
+    html += `
+        </div>
+    `;
 
 
     content.innerHTML =
@@ -1767,9 +1406,7 @@ function openVehicleTiresByTire(
 
 
     if (!tire) {
-
         return;
-
     }
 
 
@@ -1781,27 +1418,141 @@ function openVehicleTiresByTire(
 
 
 // ======================================================
-// MARKERS
+// DISTANCE
 // ======================================================
 
-function clearMarkers() {
+function updateDistance(
+    customer
+) {
 
-    markers.forEach(
-        function (marker) {
-
-            if (map) {
-
-                map.removeLayer(
-                    marker
-                );
-
-            }
-
-        }
-    );
+    const element =
+        document.getElementById(
+            "distance-" +
+            safeID(
+                customer.Customer_ID
+            )
+        );
 
 
-    markers = [];
+    if (!element) {
+        return;
+    }
+
+
+    if (
+        userLat === null ||
+        userLng === null
+    ) {
+
+        element.innerHTML =
+            "📍 Location unavailable";
+
+        return;
+
+    }
+
+
+    const lat =
+        Number(
+            customer.Latitude
+        );
+
+    const lng =
+        Number(
+            customer.Longitude
+        );
+
+
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng)
+    ) {
+
+        element.innerHTML =
+            "📍 Customer location unavailable";
+
+        return;
+
+    }
+
+
+    const distance =
+        calculateDistance(
+            userLat,
+            userLng,
+            lat,
+            lng
+        );
+
+
+    element.innerHTML =
+        "📏 Distance: " +
+        distance.toFixed(1) +
+        " km";
+
+}
+
+
+// ======================================================
+// HAVERSINE DISTANCE
+// ======================================================
+
+function calculateDistance(
+    lat1,
+    lng1,
+    lat2,
+    lng2
+) {
+
+    const R =
+        6371;
+
+
+    const dLat =
+        toRadians(
+            lat2 - lat1
+        );
+
+    const dLng =
+        toRadians(
+            lng2 - lng1
+        );
+
+
+    const a =
+        Math.sin(dLat / 2) *
+        Math.sin(dLat / 2) +
+
+        Math.cos(
+            toRadians(lat1)
+        ) *
+        Math.cos(
+            toRadians(lat2)
+        ) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+
+    const c =
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+
+    return R * c;
+
+}
+
+
+function toRadians(
+    degrees
+) {
+
+    return degrees *
+        Math.PI /
+        180;
 
 }
 
@@ -1819,9 +1570,7 @@ function openPanel() {
 
 
     if (!panel) {
-
         return;
-
     }
 
 
@@ -1831,17 +1580,6 @@ function openPanel() {
 
 
     listOpen = true;
-
-
-    setTimeout(function () {
-
-        if (map) {
-
-            map.invalidateSize();
-
-        }
-
-    }, 300);
 
 }
 
@@ -1855,9 +1593,7 @@ function closePanel() {
 
 
     if (!panel) {
-
         return;
-
     }
 
 
@@ -1868,17 +1604,6 @@ function closePanel() {
 
     listOpen = false;
 
-
-    setTimeout(function () {
-
-        if (map) {
-
-            map.invalidateSize();
-
-        }
-
-    }, 300);
-
 }
 
 
@@ -1888,7 +1613,8 @@ function toggleList() {
 
         closePanel();
 
-    } else {
+    }
+    else {
 
         openPanel();
 
@@ -1898,10 +1624,41 @@ function toggleList() {
 
 
 // ======================================================
+// DATE PARSER
+// ======================================================
+
+function parseDate(
+    value
+) {
+
+    if (!value) {
+        return 0;
+    }
+
+
+    const date =
+        new Date(value);
+
+
+    if (!isNaN(date.getTime())) {
+
+        return date.getTime();
+
+    }
+
+
+    return 0;
+
+}
+
+
+// ======================================================
 // HTML ESCAPE
 // ======================================================
 
-function escapeHTML(value) {
+function escapeHTML(
+    value
+) {
 
     return String(
         value ?? ""
@@ -1931,10 +1688,12 @@ function escapeHTML(value) {
 
 
 // ======================================================
-// JS ESCAPE
+// JAVASCRIPT ESCAPE
 // ======================================================
 
-function escapeJS(value) {
+function escapeJS(
+    value
+) {
 
     return String(
         value ?? ""
@@ -1950,6 +1709,10 @@ function escapeJS(value) {
     .replace(
         /"/g,
         '\\"'
+    )
+    .replace(
+        /\r?\n/g,
+        "\\n"
     );
 
 }
@@ -1959,7 +1722,9 @@ function escapeJS(value) {
 // SAFE ID
 // ======================================================
 
-function safeID(value) {
+function safeID(
+    value
+) {
 
     return String(
         value ?? ""
@@ -1992,7 +1757,7 @@ if (
                     function (registration) {
 
                         console.log(
-                            "TPCL Service Worker:",
+                            "TPCL Service Worker registered:",
                             registration.scope
                         );
 
@@ -2002,7 +1767,7 @@ if (
                     function (error) {
 
                         console.error(
-                            "Service Worker Error:",
+                            "Service Worker error:",
                             error
                         );
 
