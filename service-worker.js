@@ -1,4 +1,4 @@
-const CACHE_NAME = "tpcl-v10";
+const CACHE_NAME = "tpcl-v11";
 
 const APP_FILES = [
     "./",
@@ -10,6 +10,10 @@ const APP_FILES = [
     "./icon-512.png"
 ];
 
+
+// ================================
+// INSTALL
+// ================================
 
 self.addEventListener("install", event => {
 
@@ -29,6 +33,10 @@ self.addEventListener("install", event => {
 });
 
 
+// ================================
+// ACTIVATE
+// ================================
+
 self.addEventListener("activate", event => {
 
     event.waitUntil(
@@ -39,13 +47,9 @@ self.addEventListener("activate", event => {
 
                 cacheNames.map(cacheName => {
 
-                    if (
-                        cacheName !== CACHE_NAME
-                    ) {
+                    if (cacheName !== CACHE_NAME) {
 
-                        return caches.delete(
-                            cacheName
-                        );
+                        return caches.delete(cacheName);
 
                     }
 
@@ -53,14 +57,20 @@ self.addEventListener("activate", event => {
 
             );
 
+        }).then(() => {
+
+            return self.clients.claim();
+
         })
 
     );
 
-    self.clients.claim();
-
 });
 
+
+// ================================
+// FETCH
+// ================================
 
 self.addEventListener("fetch", event => {
 
@@ -76,13 +86,6 @@ self.addEventListener("fetch", event => {
                 }
 
                 return fetch(event.request);
-
-            })
-            .catch(() => {
-
-                return caches.match(
-                    "./index.html"
-                );
 
             })
 
