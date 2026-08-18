@@ -2059,7 +2059,37 @@ function showDistance(
         " km";
 
 }
+function updateAllDistances() {
 
+    customers.forEach(function(customer) {
+
+        const element =
+            document.getElementById(
+                "distance-" +
+                safeID(
+                    customer.Customer_ID
+                )
+            );
+
+        if (!element) return;
+
+        if (
+            userLat === null ||
+            userLng === null
+        ) {
+
+            element.innerHTML =
+                "📏 Location unavailable";
+
+            return;
+
+        }
+
+        showDistance(customer);
+
+    });
+
+}
 
 // ======================================================
 // PANEL
