@@ -658,7 +658,7 @@ function showCustomers(
     buildCustomerList(
         data
     );
-
+updateAllDistances();
 }
 
 
