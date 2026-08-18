@@ -111,9 +111,9 @@ function getUserLocation() {
 
     if (!navigator.geolocation) {
 
-        console.log(
-            "GPS not supported."
-        );
+        console.log("GPS not supported");
+
+        updateAllDistances();
 
         return;
     }
@@ -122,33 +122,38 @@ function getUserLocation() {
 
         function(position) {
 
-            userLat =
-                position.coords.latitude;
-
-            userLng =
-                position.coords.longitude;
+            userLat = position.coords.latitude;
+            userLng = position.coords.longitude;
 
             console.log(
-                "User location:",
+                "GPS:",
                 userLat,
                 userLng
             );
+
+            // GPS ရပြီးတာနဲ့ distance အားလုံး update
+            updateAllDistances();
 
         },
 
         function(error) {
 
             console.log(
-                "GPS unavailable:",
+                "GPS Error:",
+                error.code,
                 error.message
             );
+
+            // GPS မရရင် calculating မထားဘဲ
+            // Location unavailable ပြမယ်
+            updateAllDistances();
 
         },
 
         {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000
+            timeout: 20000,
+            maximumAge: 0
         }
 
     );
