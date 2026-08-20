@@ -18,10 +18,14 @@
         href="./manifest.json"
     >
 
+    <meta
+        name="theme-color"
+        content="#0B7285"
+    >
+
     <link
         rel="icon"
         type="image/png"
-        sizes="192x192"
         href="./icon-192.png"
     >
 
@@ -30,18 +34,13 @@
         href="./icon-192.png"
     >
 
-    <meta
-        name="theme-color"
-        content="#0B7285"
-    >
-
-    <!-- CSS -->
+    <!-- TPCL CSS -->
     <link
         rel="stylesheet"
-        href="./style.css"
+        href="./style.css?v=11"
     >
 
-    <!-- Leaflet -->
+    <!-- Leaflet CSS -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -53,130 +52,134 @@
 <body>
 
 
-    <!-- ==================================================
-         TOP SEARCH BAR
-    ================================================== -->
+    <!-- =========================
+         SEARCH
+    ========================== -->
 
-    <div class="top-bar">
+    <div class="search-box">
 
-        <!-- Search -->
-<div class="search-box">
+        <span class="search-icon">🔍</span>
 
-    <input
-        type="text"
-        id="searchInput"
-        placeholder="🔍 Search Customer..."
-        onkeyup="searchCustomer()">
-
-</div>
-
-
-<!-- Filter Button -->
-<button
-    id="filterBtn"
-    onclick="toggleFilter()">
-    🔎 Filter
-</button>
-
-
-<!-- Map -->
-<div id="map"></div>
-
-
-<!-- GPS Button -->
-<button
-    id="gpsBtn"
-    onclick="goCurrentLocation()">
-    📍
-</button>
-
-
-<!-- Customer List Button -->
-<button
-    id="listBtn"
-    onclick="toggleList()">
-    📋
-</button>
-
-
-<!-- Customer List -->
-<div id="customerList">
-
-    <div class="sheet-header">
-
-        <h3>Customer List</h3>
-
-        <button
-            id="closeListBtn"
-            onclick="closePanel()">
-            ✕
-        </button>
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search Customer..."
+            autocomplete="off"
+        >
 
     </div>
 
 
-    <!-- Filter Area -->
-    <div id="filterArea">
+    <!-- =========================
+         FILTER BUTTON
+    ========================== -->
 
-        <select id="regionFilter">
-            <option value="">
-                All Regions
-            </option>
-        </select>
-
-
-        <select id="townshipFilter">
-            <option value="">
-                All Townships
-            </option>
-        </select>
-
-
-        <select id="brandFilter">
-            <option value="">
-                All Brands
-            </option>
-        </select>
-
-
-        <button onclick="applyFilters()">
-            Apply
-        </button>
-
-
-        <button onclick="clearFilters()">
-            Clear
-        </button>
-
-    </div>
-
-
-    <!-- Customer List Content -->
-    <div id="listContent">
-
-        Loading Customers...
-
-    </div>
-
-</div>
-
-
-
-    <!-- ==================================================
-         FILTER PANEL
-    ================================================== -->
-
-    <div
-        id="filterPanel"
-        class="filter-panel"
+    <button
+        id="filterBtn"
+        type="button"
+        onclick="toggleFilter()"
     >
+        🔎 Filter
+    </button>
 
-        <div class="filter-header">
 
-            <b>⚙️ Filter</b>
+    <!-- =========================
+         FILTER PANEL
+    ========================== -->
+
+    <div id="filterPanel">
+
+        <div class="filter-row">
+
+            <select id="regionFilter">
+                <option value="">All Regions</option>
+            </select>
+
+            <select id="townshipFilter">
+                <option value="">All Townships</option>
+            </select>
+
+            <select id="brandFilter">
+                <option value="">All Brands</option>
+            </select>
+
+        </div>
+
+
+        <div class="filter-actions">
 
             <button
-                onclick="toggleFilterPanel()"
+                type="button"
+                onclick="applyFilters()"
+            >
+                Apply
+            </button>
+
+            <button
+                type="button"
+                class="clear-filter"
+                onclick="clearFilters()"
+            >
+                Clear
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         MAP
+    ========================== -->
+
+    <div id="map"></div>
+
+
+    <!-- =========================
+         GPS BUTTON
+    ========================== -->
+
+    <button
+        id="gpsBtn"
+        type="button"
+        onclick="goCurrentLocation()"
+        title="Current Location"
+    >
+        📍
+    </button>
+
+
+    <!-- =========================
+         CUSTOMER LIST BUTTON
+    ========================== -->
+
+    <button
+        id="listBtn"
+        type="button"
+        onclick="toggleList()"
+        title="Customer List"
+    >
+        📋
+    </button>
+
+
+    <!-- =========================
+         CUSTOMER LIST PANEL
+    ========================== -->
+
+    <div id="customerList">
+
+        <div class="sheet-header">
+
+            <h3 id="panelTitle">
+                Customer List
+            </h3>
+
+            <button
+                id="closeListBtn"
+                type="button"
+                onclick="closePanel()"
+                title="Close"
             >
                 ✕
             </button>
@@ -184,164 +187,32 @@
         </div>
 
 
-        <!-- Region -->
-
-        <label>
-            Region
-        </label>
-
-        <select id="regionFilter">
-
-            <option value="">
-                All Regions
-            </option>
-
-        </select>
-
-
-        <!-- Township -->
-
-        <label>
-            Township
-        </label>
-
-        <select id="townshipFilter">
-
-            <option value="">
-                All Townships
-            </option>
-
-        </select>
-
-
-        <!-- Brand -->
-
-        <label>
-            Brand
-        </label>
-
-        <select id="brandFilter">
-
-            <option value="">
-                All Brands
-            </option>
-
-        </select>
-
-
-        <!-- Vehicle Type -->
-
-        <label>
-            Vehicle Type
-        </label>
-
-        <select id="vehicleTypeFilter">
-
-            <option value="">
-                All Vehicle Types
-            </option>
-
-        </select>
-
-
-        <!-- Buttons -->
-
-        <div class="filter-actions">
-
-            <button
-                class="clear-filter-btn"
-                onclick="clearFilters()"
-            >
-                Clear
-            </button>
-
-            <button
-                class="apply-filter-btn"
-                onclick="applyFilters()"
-            >
-                Apply
-            </button>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- ==================================================
-         MAP
-    ================================================== -->
-
-    <div id="map"></div>
-
-
-
-    <!-- ==================================================
-         GPS BUTTON
-    ================================================== -->
-
-    <button
-        id="gpsBtn"
-        onclick="goCurrentLocation()"
-    >
-        📍
-    </button>
-
-
-
-    <!-- ==================================================
-         CUSTOMER LIST BUTTON
-    ================================================== -->
-
-    <button
-        id="listBtn"
-        onclick="toggleList()"
-    >
-        📋
-    </button>
-
-
-
-    <!-- ==================================================
-         CUSTOMER LIST
-    ================================================== -->
-
-    <div id="customerList">
-
-        <div class="sheet-header">
-
-            <h3>
-                Customer List
-            </h3>
-
-        </div>
-
-
         <div id="listContent">
 
-            Loading Customers...
+            <div class="loading">
+                Loading Customers...
+            </div>
 
         </div>
 
     </div>
 
 
-
-    <!-- ==================================================
+    <!-- =========================
          LEAFLET JS
-    ================================================== -->
+    ========================== -->
 
     <script
         src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     ></script>
 
 
-    <!-- ==================================================
-         APP JS
-    ================================================== -->
+    <!-- =========================
+         TPCL APP JS
+    ========================== -->
 
     <script
-        src="./app.js"
+        src="./app.js?v=11"
     ></script>
 
 
