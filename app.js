@@ -1,8 +1,7 @@
 // ======================================================
-// TPCL APP - CLEAN VERSION
+// TPCL APP
 // Customer → Vehicle → Tire → Inspection
-// Search / Filter / GPS / Distance / Navigate
-// Customer / Vehicle / Tire / Inspection Notes
+// Search + Filter + GPS + Distance + Navigate
 // ======================================================
 
 
@@ -24,7 +23,7 @@ const INSPECTION_API =
 
 
 // ======================================================
-// GLOBAL DATA
+// GLOBAL
 // ======================================================
 
 let map = null;
@@ -43,20 +42,49 @@ let listOpen = false;
 
 
 // ======================================================
+// FILTER STATE
+// ======================================================
+
+let activeFilters = {
+    region: "",
+    township: "",
+    brand: "",
+    vehicleType: ""
+};
+
+
+// ======================================================
+// START
+// ======================================================
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    initMap();
+
+    loadAllData();
+
+    getUserLocation();
+
+    setupFilterEvents();
+
+});
+
+
+// ======================================================
 // MAP
 // ======================================================
 
 function initMap() {
 
-    if (map) return;
-
     const mapElement =
         document.getElementById("map");
 
     if (!mapElement) {
-        console.error("Map element not found.");
+        console.error("Map element not found");
         return;
     }
+
+    if (map) return;
 
     map = L.map("map", {
         zoomControl: true
@@ -74,33 +102,13 @@ function initMap() {
         }
     ).addTo(map);
 
-    setTimeout(() => {
+    setTimeout(function () {
 
-        if (map) {
-            map.invalidateSize();
-        }
+        map.invalidateSize();
 
-    }, 300);
+    }, 500);
 
 }
-
-
-// ======================================================
-// START APP
-// ======================================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    function() {
-
-        initMap();
-
-        getUserLocation();
-
-        loadAllData();
-
-    }
-);
 
 
 // ======================================================
@@ -111,19 +119,26 @@ function getUserLocation() {
 
     if (!navigator.geolocation) {
 
-        console.log("GPS not supported");
-
-        updateAllDistances();
+        console.log(
+            "GPS not supported"
+        );
 
         return;
     }
 
     navigator.geolocation.getCurrentPosition(
 
-        function(position) {
+        function (position) {
 
-            userLat = position.coords.latitude;
-            userLng = position.coords.longitude;
+            userLat =
+                Number(
+                    position.coords.latitude
+                );
+
+            userLng =
+                Number(
+                    position.coords.longitude
+                );
 
             console.log(
                 "GPS:",
@@ -131,28 +146,34 @@ function getUserLocation() {
                 userLng
             );
 
-            // GPS ရပြီးတာနဲ့ distance အားလုံး update
-            updateAllDistances();
+            /*
+             * GPS ရပြီးတာနဲ့
+             * customer popup distance ကို
+             * ပြန် generate လုပ်
+             */
+
+            if (customers.length > 0) {
+
+                showCustomers(
+                    getFilteredCustomers()
+                );
+
+            }
 
         },
 
-        function(error) {
+        function (error) {
 
             console.log(
-                "GPS Error:",
-                error.code,
+                "GPS unavailable:",
                 error.message
             );
-
-            // GPS မရရင် calculating မထားဘဲ
-            // Location unavailable ပြမယ်
-            updateAllDistances();
 
         },
 
         {
             enableHighAccuracy: true,
-            timeout: 20000,
+            timeout: 15000,
             maximumAge: 0
         }
 
@@ -162,7 +183,7 @@ function getUserLocation() {
 
 
 // ======================================================
-// CURRENT LOCATION BUTTON
+// CURRENT LOCATION
 // ======================================================
 
 function goCurrentLocation() {
@@ -170,7 +191,7 @@ function goCurrentLocation() {
     if (!navigator.geolocation) {
 
         alert(
-            "GPS is not supported on this device."
+            "GPS is not supported."
         );
 
         return;
@@ -178,43 +199,65 @@ function goCurrentLocation() {
 
     navigator.geolocation.getCurrentPosition(
 
-        function(position) {
+        function (position) {
 
             userLat =
-                position.coords.latitude;
+                Number(
+                    position.coords.latitude
+                );
 
             userLng =
-                position.coords.longitude;
+                Number(
+                    position.coords.longitude
+                );
+
 
             if (!map) return;
 
+
             map.setView(
-                [userLat, userLng],
+                [
+                    userLat,
+                    userLng
+                ],
                 15,
                 {
                     animate: true
                 }
             );
 
+
             L.circleMarker(
-                [userLat, userLng],
+                [
+                    userLat,
+                    userLng
+                ],
                 {
                     radius: 7
                 }
             )
-            .addTo(map)
-            .bindPopup(
-                "📍 Your Current Location"
-            )
-            .openPopup();
+                .addTo(map)
+                .bindPopup(
+                    "📍 Your Current Location"
+                )
+                .openPopup();
+
+
+            /*
+             * Distance update
+             */
+
+            if (customers.length > 0) {
+
+                showCustomers(
+                    getFilteredCustomers()
+                );
+
+            }
 
         },
 
-        function(error) {
-
-            console.log(
-                error
-            );
+        function () {
 
             alert(
                 "Unable to get your current location."
@@ -224,7 +267,7 @@ function goCurrentLocation() {
 
         {
             enableHighAccuracy: true,
-            timeout: 10000,
+            timeout: 15000,
             maximumAge: 0
         }
 
@@ -234,7 +277,7 @@ function goCurrentLocation() {
 
 
 // ======================================================
-// LOAD ALL DATA
+// LOAD DATA
 // ======================================================
 
 async function loadAllData() {
@@ -245,54 +288,50 @@ async function loadAllData() {
             await Promise.all([
 
                 fetch(CUSTOMER_API)
-                    .then(response => {
+                    .then(function (r) {
 
-                        if (!response.ok) {
+                        if (!r.ok)
                             throw new Error(
                                 "Customer API error"
                             );
-                        }
 
-                        return response.json();
+                        return r.json();
 
                     }),
 
                 fetch(VEHICLE_API)
-                    .then(response => {
+                    .then(function (r) {
 
-                        if (!response.ok) {
+                        if (!r.ok)
                             throw new Error(
                                 "Vehicle API error"
                             );
-                        }
 
-                        return response.json();
+                        return r.json();
 
                     }),
 
                 fetch(TIRE_API)
-                    .then(response => {
+                    .then(function (r) {
 
-                        if (!response.ok) {
+                        if (!r.ok)
                             throw new Error(
                                 "Tire API error"
                             );
-                        }
 
-                        return response.json();
+                        return r.json();
 
                     }),
 
                 fetch(INSPECTION_API)
-                    .then(response => {
+                    .then(function (r) {
 
-                        if (!response.ok) {
+                        if (!r.ok)
                             throw new Error(
                                 "Inspection API error"
                             );
-                        }
 
-                        return response.json();
+                        return r.json();
 
                     })
 
@@ -341,39 +380,40 @@ async function loadAllData() {
         );
 
 
-        showCustomers();
+        buildFilterOptions();
+
+
+        showCustomers(
+            getFilteredCustomers()
+        );
 
     }
 
-    catch(error) {
+    catch (error) {
 
         console.error(
             "TPCL DATA ERROR:",
             error
         );
 
+
         const list =
             document.getElementById(
                 "listContent"
             );
 
+
         if (list) {
 
             list.innerHTML = `
-
                 <div style="
                     padding:20px;
                     color:#b00020;
                 ">
-
                     ❌ Cannot load TPCL data.
-
                     <br><br>
-
                     Please check Google Apps Script API.
-
                 </div>
-
             `;
 
         }
@@ -384,24 +424,20 @@ async function loadAllData() {
 
 
 // ======================================================
-// CLEAR MAP MARKERS
+// CLEAR MARKERS
 // ======================================================
 
 function clearMarkers() {
 
-    markers.forEach(
-        marker => {
+    markers.forEach(function (marker) {
 
-            if (map) {
+        if (map) {
 
-                map.removeLayer(
-                    marker
-                );
-
-            }
+            map.removeLayer(marker);
 
         }
-    );
+
+    });
 
     markers = [];
 
@@ -409,7 +445,7 @@ function clearMarkers() {
 
 
 // ======================================================
-// SHOW CUSTOMERS ON MAP
+// SHOW CUSTOMERS
 // ======================================================
 
 function showCustomers(
@@ -422,248 +458,384 @@ function showCustomers(
 
     }
 
+
+    if (!map) return;
+
+
     clearMarkers();
 
 
-    data.forEach(
-        customer => {
-
-            const lat =
-                Number(
-                    customer.Latitude
-                );
-
-            const lng =
-                Number(
-                    customer.Longitude
-                );
-
-
-            if (
-                !Number.isFinite(lat) ||
-                !Number.isFinite(lng) ||
-                lat === 0 ||
-                lng === 0
-            ) {
-
-                return;
-
-            }
-
-
-            const customerID =
-                customer.Customer_ID || "";
-
-            const phone =
-                customer.Phone_Number || "";
-
-
-            const marker =
-                L.marker([
-                    lat,
-                    lng
-                ])
-                .addTo(map);
-
-
-            // ==================================================
-            // CUSTOMER POPUP
-            // ==================================================
-
-            marker.bindPopup(`
-
-                <div style="
-                    min-width:250px;
-                ">
-
-                    <h3 style="
-                        margin-top:0;
-                        margin-bottom:8px;
-                    ">
-
-                        ${escapeHTML(
-                            customer.Customer_Name
-                        )}
-
-                    </h3>
-
-
-                    🌏 <b>Region:</b>
-                    ${escapeHTML(
-                        customer.Region
-                    )}
-
-                    <br>
-
-
-                    📍 <b>Township:</b>
-                    ${escapeHTML(
-                        customer.Township
-                    )}
-
-                    <br>
-
-
-                    🚛 <b>Vehicles:</b>
-                    ${escapeHTML(
-                        customer.Vehicle_Count
-                    )}
-
-                    <br>
-
-
-                    🏷 <b>Brand:</b>
-                    ${escapeHTML(
-                        customer.Brand
-                    )}
-
-                    <br>
-
-
-                    <span id="
-                        distance-${safeID(
-                            customerID
-                        )}
-                    ">
-
-                        📏 Calculating...
-
-                    </span>
-
-
-                    ${
-                        customer.Note
-                        ?
-                        `
-
-                        <br>
-
-                        📝 <b>Customer Note:</b>
-                        ${escapeHTML(
-                            customer.Note
-                        )}
-
-                        `
-                        :
-                        ""
-                    }
-
-
-                    <br><br>
-
-
-                    <button
-                        onclick="
-                            openCustomerVehicles(
-                                '${escapeJS(
-                                    customerID
-                                )}'
-                            )
-                        "
-                        style="
-                            width:100%;
-                            padding:10px;
-                            border:0;
-                            border-radius:8px;
-                            background:#1976D2;
-                            color:white;
-                            font-size:15px;
-                        "
-                    >
-
-                        🚛 View Vehicles
-
-                    </button>
-
-
-                    <br><br>
-
-
-                    ${
-                        phone
-                        ?
-                        `
-
-                        <a
-                            href="tel:${escapeHTML(
-                                phone
-                            )}"
-                            style="
-                                display:inline-block;
-                                background:#28a745;
-                                color:white;
-                                padding:8px 12px;
-                                border-radius:8px;
-                                text-decoration:none;
-                            "
-                        >
-
-                            📞 Call
-
-                        </a>
-
-                        `
-                        :
-                        ""
-                    }
-
-
-                    <a
-                        target="_blank"
-                        rel="noopener"
-                        href="
-                            https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}
-                        "
-                        style="
-                            display:inline-block;
-                            background:#1976D2;
-                            color:white;
-                            padding:8px 12px;
-                            border-radius:8px;
-                            text-decoration:none;
-                            margin-left:8px;
-                        "
-                    >
-
-                        🧭 Navigate
-
-                    </a>
-
-
-                </div>
-
-            `);
-
-
-            marker.on(
-                "popupopen",
-                function() {
-
-                    showDistance(
-                        customer
-                    );
-
-                }
+    data.forEach(function (customer) {
+
+        const lat =
+            Number(
+                customer.Latitude
+            );
+
+        const lng =
+            Number(
+                customer.Longitude
             );
 
 
-            markers.push(
-                marker
-            );
+        if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng) ||
+            lat === 0 ||
+            lng === 0
+        ) {
+
+            return;
 
         }
-    );
+
+
+        const marker =
+            L.marker(
+                [
+                    lat,
+                    lng
+                ]
+            ).addTo(map);
+
+
+        const customerID =
+            String(
+                customer.Customer_ID || ""
+            );
+
+
+        const phone =
+            String(
+                customer.Phone_Number || ""
+            );
+
+
+        /*
+         * Distance
+         */
+
+        const distanceText =
+            getDistanceText(customer);
+
+
+        /*
+         * Customer Note
+         */
+
+        const customerNote =
+            customer.Note
+                ? `
+                    <br>
+                    📝 <b>Note:</b>
+                    ${escapeHTML(customer.Note)}
+                `
+                : "";
+
+
+        /*
+         * Popup
+         */
+
+        const popupHTML = `
+
+            <div style="
+                min-width:260px;
+                max-width:300px;
+            ">
+
+                <h3 style="
+                    margin-top:0;
+                    margin-bottom:8px;
+                ">
+                    ${escapeHTML(
+                        customer.Customer_Name
+                    )}
+                </h3>
+
+
+                🌏 <b>Region:</b>
+                ${escapeHTML(
+                    customer.Region
+                )}
+
+                <br>
+
+                📍 <b>Township:</b>
+                ${escapeHTML(
+                    customer.Township
+                )}
+
+                <br>
+
+                🚛 <b>Vehicles:</b>
+                ${escapeHTML(
+                    customer.Vehicle_Count
+                )}
+
+                <br>
+
+                🏷 <b>Brand:</b>
+                ${escapeHTML(
+                    customer.Brand
+                )}
+
+                <br>
+
+                📏
+                <span id="
+                    distance-${safeID(customerID)}
+                ">
+                    ${distanceText}
+                </span>
+
+                ${customerNote}
+
+
+                <br><br>
+
+
+                <button
+                    onclick="
+                        openCustomerVehicles(
+                            '${escapeJS(customerID)}'
+                        )
+                    "
+                    style="
+                        width:100%;
+                        padding:10px;
+                        border:0;
+                        border-radius:8px;
+                        background:#1976D2;
+                        color:white;
+                        font-size:15px;
+                    "
+                >
+                    🚛 View Vehicles
+                </button>
+
+
+                <br><br>
+
+
+                ${
+                    phone
+                        ? `
+                            <a
+                                href="tel:${escapeHTML(phone)}"
+                                style="
+                                    display:inline-block;
+                                    background:#28a745;
+                                    color:white;
+                                    padding:8px 12px;
+                                    border-radius:8px;
+                                    text-decoration:none;
+                                "
+                            >
+                                📞 Call
+                            </a>
+                        `
+                        : ""
+                }
+
+
+                <a
+                    target="_blank"
+                    rel="noopener"
+                    href="
+                        https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}
+                    "
+                    style="
+                        display:inline-block;
+                        background:#1976D2;
+                        color:white;
+                        padding:8px 12px;
+                        border-radius:8px;
+                        text-decoration:none;
+                        margin-left:8px;
+                    "
+                >
+                    🧭 Navigate
+                </a>
+
+            </div>
+
+        `;
+
+
+        marker.bindPopup(
+            popupHTML
+        );
+
+
+        /*
+         * Popup open ဖြစ်တဲ့အခါ
+         * distance ကို ထပ် update
+         */
+
+        marker.on(
+            "popupopen",
+            function () {
+
+                showDistance(
+                    customer
+                );
+
+            }
+        );
+
+
+        markers.push(
+            marker
+        );
+
+    });
 
 
     buildCustomerList(
         data
     );
-updateAllDistances();
+
 }
 
 
 // ======================================================
-// SEARCH / FILTER
+// DISTANCE TEXT
+// ======================================================
+
+function getDistanceText(
+    customer
+) {
+
+    if (
+        userLat === null ||
+        userLng === null
+    ) {
+
+        return "📏 GPS unavailable";
+
+    }
+
+
+    const lat =
+        Number(
+            customer.Latitude
+        );
+
+    const lng =
+        Number(
+            customer.Longitude
+        );
+
+
+    if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng)
+    ) {
+
+        return "📏 Location unavailable";
+
+    }
+
+
+    const R = 6371;
+
+
+    const dLat =
+        (
+            lat - userLat
+        ) *
+        Math.PI / 180;
+
+
+    const dLng =
+        (
+            lng - userLng
+        ) *
+        Math.PI / 180;
+
+
+    const a =
+        Math.sin(
+            dLat / 2
+        ) ** 2
+        +
+        Math.cos(
+            userLat *
+            Math.PI / 180
+        )
+        *
+        Math.cos(
+            lat *
+            Math.PI / 180
+        )
+        *
+        Math.sin(
+            dLng / 2
+        ) ** 2;
+
+
+    const c =
+        2 *
+        Math.atan2(
+            Math.sqrt(a),
+            Math.sqrt(1 - a)
+        );
+
+
+    const distance =
+        (
+            R * c
+        ).toFixed(1);
+
+
+    return (
+        "📏 Distance: " +
+        distance +
+        " km"
+    );
+
+}
+
+
+// ======================================================
+// SHOW DISTANCE
+// ======================================================
+
+function showDistance(
+    customer
+) {
+
+    const id =
+        "distance-" +
+        safeID(
+            customer.Customer_ID
+        );
+
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (!element) {
+
+        return;
+
+    }
+
+
+    element.innerHTML =
+        getDistanceText(
+            customer
+        );
+
+}
+
+
+// ======================================================
+// SEARCH
 // ======================================================
 
 function searchCustomer() {
@@ -672,6 +844,7 @@ function searchCustomer() {
         document.getElementById(
             "searchInput"
         );
+
 
     if (!input) return;
 
@@ -682,18 +855,48 @@ function searchCustomer() {
             .toLowerCase();
 
 
-    if (keyword === "") {
-
-        showCustomers();
-
-        return;
-
-    }
-
-
     const filtered =
-        customers.filter(
-            customer => {
+        getFilteredCustomers(
+            keyword
+        );
+
+
+    showCustomers(
+        filtered
+    );
+
+}
+
+
+// ======================================================
+// GET FILTERED CUSTOMERS
+// ======================================================
+
+function getFilteredCustomers(
+    searchKeyword = ""
+) {
+
+    const keyword =
+        String(
+            searchKeyword || ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    return customers.filter(
+        function (customer) {
+
+
+            // ------------------------------------------
+            // SEARCH
+            // ------------------------------------------
+
+            let searchMatch =
+                true;
+
+
+            if (keyword) {
 
                 const customerID =
                     String(
@@ -701,11 +904,13 @@ function searchCustomer() {
                     )
                     .toLowerCase();
 
+
                 const customerName =
                     String(
                         customer.Customer_Name || ""
                     )
                     .toLowerCase();
+
 
                 const region =
                     String(
@@ -713,11 +918,13 @@ function searchCustomer() {
                     )
                     .toLowerCase();
 
+
                 const township =
                     String(
                         customer.Township || ""
                     )
                     .toLowerCase();
+
 
                 const brand =
                     String(
@@ -726,65 +933,158 @@ function searchCustomer() {
                     .toLowerCase();
 
 
-                const customerNote =
+                const phone =
                     String(
-                        customer.Note || ""
+                        customer.Phone_Number || ""
                     )
                     .toLowerCase();
 
 
-                const customerVehicles =
-                    vehicles.filter(
-                        vehicle =>
-                            String(
-                                vehicle.Customer_ID || ""
-                            )
-                            ===
-                            String(
-                                customer.Customer_ID || ""
-                            )
-                    );
-
-
                 const vehicleMatch =
-                    customerVehicles.some(
-                        vehicle => {
+                    vehicles.some(
+                        function (vehicle) {
 
-                            const vehicleNumber =
+                            if (
+                                String(
+                                    vehicle.Customer_ID || ""
+                                ) !==
+                                String(
+                                    customer.Customer_ID || ""
+                                )
+                            ) {
+
+                                return false;
+
+                            }
+
+
+                            const number =
                                 String(
                                     vehicle.Vehicle_Number || ""
                                 )
                                 .toLowerCase();
 
-                            const vehicleID =
+
+                            const id =
                                 String(
                                     vehicle.Vehicle_ID || ""
                                 )
                                 .toLowerCase();
 
-                            const vehicleNote =
-                                String(
-                                    vehicle.Note || ""
-                                )
-                                .toLowerCase();
 
+                            return (
+                                number.includes(keyword) ||
+                                id.includes(keyword)
+                            );
+
+                        }
+                    );
+
+
+                searchMatch =
+                    customerID.includes(keyword) ||
+                    customerName.includes(keyword) ||
+                    region.includes(keyword) ||
+                    township.includes(keyword) ||
+                    brand.includes(keyword) ||
+                    phone.includes(keyword) ||
+                    vehicleMatch;
+
+            }
+
+
+            if (!searchMatch) {
+
+                return false;
+
+            }
+
+
+            // ------------------------------------------
+            // REGION
+            // ------------------------------------------
+
+            if (
+                activeFilters.region &&
+                String(
+                    customer.Region || ""
+                ) !==
+                String(
+                    activeFilters.region
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            // ------------------------------------------
+            // TOWNSHIP
+            // ------------------------------------------
+
+            if (
+                activeFilters.township &&
+                String(
+                    customer.Township || ""
+                ) !==
+                String(
+                    activeFilters.township
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            // ------------------------------------------
+            // BRAND
+            // ------------------------------------------
+
+            if (
+                activeFilters.brand &&
+                String(
+                    customer.Brand || ""
+                ) !==
+                String(
+                    activeFilters.brand
+                )
+            ) {
+
+                return false;
+
+            }
+
+
+            // ------------------------------------------
+            // VEHICLE TYPE
+            // ------------------------------------------
+
+            if (
+                activeFilters.vehicleType
+            ) {
+
+                const hasVehicleType =
+                    vehicles.some(
+                        function (vehicle) {
 
                             return (
 
-                                vehicleNumber.includes(
-                                    keyword
+                                String(
+                                    vehicle.Customer_ID || ""
+                                ) ===
+                                String(
+                                    customer.Customer_ID || ""
                                 )
 
-                                ||
+                                &&
 
-                                vehicleID.includes(
-                                    keyword
-                                )
-
-                                ||
-
-                                vehicleNote.includes(
-                                    keyword
+                                String(
+                                    vehicle.Vehicle_Type || ""
+                                ) ===
+                                String(
+                                    activeFilters.vehicleType
                                 )
 
                             );
@@ -793,55 +1093,380 @@ function searchCustomer() {
                     );
 
 
-                return (
+                if (!hasVehicleType) {
 
-                    customerID.includes(
-                        keyword
-                    )
+                    return false;
 
-                    ||
-
-                    customerName.includes(
-                        keyword
-                    )
-
-                    ||
-
-                    region.includes(
-                        keyword
-                    )
-
-                    ||
-
-                    township.includes(
-                        keyword
-                    )
-
-                    ||
-
-                    brand.includes(
-                        keyword
-                    )
-
-                    ||
-
-                    customerNote.includes(
-                        keyword
-                    )
-
-                    ||
-
-                    vehicleMatch
-
-                );
+                }
 
             }
+
+
+            return true;
+
+        }
+    );
+
+}
+
+
+// ======================================================
+// BUILD FILTER OPTIONS
+// ======================================================
+
+function buildFilterOptions() {
+
+    fillSelect(
+        "regionFilter",
+        uniqueValues(
+            customers,
+            "Region"
+        ),
+        "All Regions"
+    );
+
+
+    fillSelect(
+        "townshipFilter",
+        uniqueValues(
+            customers,
+            "Township"
+        ),
+        "All Townships"
+    );
+
+
+    fillSelect(
+        "brandFilter",
+        uniqueValues(
+            customers,
+            "Brand"
+        ),
+        "All Brands"
+    );
+
+
+    fillSelect(
+        "vehicleTypeFilter",
+        uniqueValues(
+            vehicles,
+            "Vehicle_Type"
+        ),
+        "All Vehicle Types"
+    );
+
+}
+
+
+// ======================================================
+// UNIQUE VALUES
+// ======================================================
+
+function uniqueValues(
+    data,
+    field
+) {
+
+    const values =
+        data
+            .map(
+                item =>
+                    String(
+                        item[field] || ""
+                    ).trim()
+            )
+            .filter(
+                value =>
+                    value !== ""
+            );
+
+
+    return [
+        ...new Set(values)
+    ].sort();
+
+}
+
+
+// ======================================================
+// FILL SELECT
+// ======================================================
+
+function fillSelect(
+    elementID,
+    values,
+    defaultText
+) {
+
+    const select =
+        document.getElementById(
+            elementID
         );
 
 
-    showCustomers(
-        filtered
+    if (!select) return;
+
+
+    select.innerHTML = "";
+
+
+    const defaultOption =
+        document.createElement(
+            "option"
+        );
+
+
+    defaultOption.value = "";
+
+    defaultOption.textContent =
+        defaultText;
+
+
+    select.appendChild(
+        defaultOption
     );
+
+
+    values.forEach(
+        function (value) {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+
+            option.value =
+                value;
+
+            option.textContent =
+                value;
+
+
+            select.appendChild(
+                option
+            );
+
+        }
+    );
+
+}
+
+
+// ======================================================
+// FILTER EVENTS
+// ======================================================
+
+function setupFilterEvents() {
+
+    const ids = [
+        "regionFilter",
+        "townshipFilter",
+        "brandFilter",
+        "vehicleTypeFilter"
+    ];
+
+
+    ids.forEach(
+        function (id) {
+
+            const element =
+                document.getElementById(
+                    id
+                );
+
+
+            if (!element) return;
+
+
+            element.addEventListener(
+                "change",
+                function () {
+
+                    // Township / Brand စတာတွေကို
+                    // ရွေးချယ်တဲ့အချိန်မှာပဲ
+                    // Apply နှိပ်နိုင်အောင်ထား
+
+                }
+            );
+
+        }
+    );
+
+}
+
+
+// ======================================================
+// APPLY FILTER
+// ======================================================
+
+function applyFilters() {
+
+    activeFilters = {
+
+        region:
+            getValue("regionFilter"),
+
+        township:
+            getValue("townshipFilter"),
+
+        brand:
+            getValue("brandFilter"),
+
+        vehicleType:
+            getValue("vehicleTypeFilter")
+
+    };
+
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    const keyword =
+        searchInput
+            ? searchInput.value
+            : "";
+
+
+    showCustomers(
+        getFilteredCustomers(
+            keyword
+        )
+    );
+
+
+    toggleFilterPanel();
+
+}
+
+
+// ======================================================
+// CLEAR FILTER
+// ======================================================
+
+function clearFilters() {
+
+    activeFilters = {
+
+        region: "",
+        township: "",
+        brand: "",
+        vehicleType: ""
+
+    };
+
+
+    setValue(
+        "regionFilter",
+        ""
+    );
+
+    setValue(
+        "townshipFilter",
+        ""
+    );
+
+    setValue(
+        "brandFilter",
+        ""
+    );
+
+    setValue(
+        "vehicleTypeFilter",
+        ""
+    );
+
+
+    const searchInput =
+        document.getElementById(
+            "searchInput"
+        );
+
+
+    if (searchInput) {
+
+        searchInput.value = "";
+
+    }
+
+
+    showCustomers(
+        customers
+    );
+
+
+    toggleFilterPanel();
+
+}
+
+
+// ======================================================
+// FILTER PANEL
+// ======================================================
+
+function toggleFilterPanel() {
+
+    const panel =
+        document.getElementById(
+            "filterPanel"
+        );
+
+
+    if (!panel) return;
+
+
+    panel.classList.toggle(
+        "show"
+    );
+
+}
+
+
+// ======================================================
+// GET VALUE
+// ======================================================
+
+function getValue(
+    id
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    return element
+        ? element.value
+        : "";
+
+}
+
+
+// ======================================================
+// SET VALUE
+// ======================================================
+
+function setValue(
+    id,
+    value
+) {
+
+    const element =
+        document.getElementById(
+            id
+        );
+
+
+    if (element) {
+
+        element.value =
+            value;
+
+    }
 
 }
 
@@ -859,10 +1484,11 @@ function buildCustomerList(
             "listContent"
         );
 
+
     if (!container) return;
 
 
-    if (data.length === 0) {
+    if (!data.length) {
 
         container.innerHTML = `
 
@@ -886,7 +1512,7 @@ function buildCustomerList(
 
 
     data.forEach(
-        customer => {
+        function (customer) {
 
             const lat =
                 Number(
@@ -915,11 +1541,9 @@ function buildCustomerList(
                 >
 
                     <b>
-
                         ${escapeHTML(
                             customer.Customer_Name
                         )}
-
                     </b>
 
                     <br>
@@ -942,23 +1566,6 @@ function buildCustomerList(
                     ${escapeHTML(
                         customer.Brand
                     )}
-
-                    ${
-                        customer.Note
-                        ?
-                        `
-
-                        <br>
-
-                        📝
-                        ${escapeHTML(
-                            customer.Note
-                        )}
-
-                        `
-                        :
-                        ""
-                    }
 
                 </div>
 
@@ -984,6 +1591,9 @@ function focusCustomer(
     customerID
 ) {
 
+    if (!map) return;
+
+
     if (
         !Number.isFinite(lat) ||
         !Number.isFinite(lng)
@@ -994,11 +1604,11 @@ function focusCustomer(
     }
 
 
-    if (!map) return;
-
-
     map.setView(
-        [lat, lng],
+        [
+            lat,
+            lng
+        ],
         16,
         {
             animate: true
@@ -1008,23 +1618,20 @@ function focusCustomer(
 
     const marker =
         markers.find(
-            m => {
+            function (item) {
 
                 const position =
-                    m.getLatLng();
+                    item.getLatLng();
+
 
                 return (
-
                     Math.abs(
                         position.lat - lat
                     ) < 0.000001
-
                     &&
-
                     Math.abs(
                         position.lng - lng
                     ) < 0.000001
-
                 );
 
             }
@@ -1053,36 +1660,38 @@ function openCustomerVehicles(
 
     const customer =
         customers.find(
-            c =>
-                String(
+            function (c) {
+
+                return String(
                     c.Customer_ID
-                )
-                ===
-                String(
+                ) === String(
                     customerID
-                )
+                );
+
+            }
         );
 
 
     if (!customer) return;
 
 
-    const customerVehicles =
+    const data =
         vehicles.filter(
-            vehicle =>
-                String(
-                    vehicle.Customer_ID
-                )
-                ===
-                String(
+            function (v) {
+
+                return String(
+                    v.Customer_ID
+                ) === String(
                     customerID
-                )
+                );
+
+            }
         );
 
 
     showVehiclePanel(
         customer,
-        customerVehicles
+        data
     );
 
 }
@@ -1112,86 +1721,55 @@ function showVehiclePanel(
             padding:12px;
         ">
 
-
             <button
-                onclick="showCustomers()"
+                onclick="showCustomers(
+                    getFilteredCustomers()
+                )"
                 style="
                     padding:8px 12px;
                     border:0;
                     border-radius:8px;
                 "
             >
-
                 ← Customers
-
             </button>
 
 
             <h3>
-
                 🚛
                 ${escapeHTML(
                     customer.Customer_Name
                 )}
-
             </h3>
 
     `;
 
 
-    // CUSTOMER NOTE
-    if (customer.Note) {
+    if (!data.length) {
 
         html += `
-
-            <div style="
-                background:#fff8e1;
-                padding:10px;
-                border-radius:8px;
-                margin-bottom:10px;
-            ">
-
-                📝 <b>Customer Note:</b>
-
-                <br>
-
-                ${escapeHTML(
-                    customer.Note
-                )}
-
-            </div>
-
-        `;
-
-    }
-
-
-    if (data.length === 0) {
-
-        html += `
-
             <p>
                 No vehicle data found.
             </p>
-
         `;
 
     }
 
 
     data.forEach(
-        vehicle => {
+        function (vehicle) {
 
             const tireCount =
                 tires.filter(
-                    tire =>
-                        String(
+                    function (tire) {
+
+                        return String(
                             tire.Vehicle_ID
-                        )
-                        ===
-                        String(
+                        ) === String(
                             vehicle.Vehicle_ID
-                        )
+                        );
+
+                    }
                 ).length;
 
 
@@ -1209,12 +1787,10 @@ function showVehiclePanel(
                 >
 
                     <b>
-
                         🚛
                         ${escapeHTML(
                             vehicle.Vehicle_Number
                         )}
-
                     </b>
 
                     <br>
@@ -1243,23 +1819,16 @@ function showVehiclePanel(
                     🛞 Tires:
                     ${tireCount}
 
-
                     ${
                         vehicle.Note
-                        ?
-                        `
-
-                        <br>
-
-                        📝 <b>Vehicle Note:</b>
-
-                        ${escapeHTML(
-                            vehicle.Note
-                        )}
-
-                        `
-                        :
-                        ""
+                            ? `
+                                <br>
+                                📝
+                                ${escapeHTML(
+                                    vehicle.Note
+                                )}
+                            `
+                            : ""
                     }
 
                 </div>
@@ -1294,36 +1863,38 @@ function openVehicleTires(
 
     const vehicle =
         vehicles.find(
-            v =>
-                String(
+            function (v) {
+
+                return String(
                     v.Vehicle_ID
-                )
-                ===
-                String(
+                ) === String(
                     vehicleID
-                )
+                );
+
+            }
         );
 
 
     if (!vehicle) return;
 
 
-    const vehicleTires =
+    const data =
         tires.filter(
-            tire =>
-                String(
-                    tire.Vehicle_ID
-                )
-                ===
-                String(
+            function (t) {
+
+                return String(
+                    t.Vehicle_ID
+                ) === String(
                     vehicleID
-                )
+                );
+
+            }
         );
 
 
     showTirePanel(
         vehicle,
-        vehicleTires
+        data
     );
 
 }
@@ -1353,7 +1924,6 @@ function showTirePanel(
             padding:12px;
         ">
 
-
             <button
                 onclick="
                     openCustomerVehiclesByVehicle(
@@ -1368,86 +1938,38 @@ function showTirePanel(
                     border-radius:8px;
                 "
             >
-
                 ← Vehicles
-
             </button>
 
 
             <h3>
-
                 🛞 Tires -
                 ${escapeHTML(
                     vehicle.Vehicle_Number
                 )}
-
             </h3>
 
     `;
 
 
-    // VEHICLE NOTE
-    if (vehicle.Note) {
-
-        html += `
-
-            <div style="
-                background:#fff8e1;
-                padding:10px;
-                border-radius:8px;
-                margin-bottom:10px;
-            ">
-
-                📝 <b>Vehicle Note:</b>
-
-                <br>
-
-                ${escapeHTML(
-                    vehicle.Note
-                )}
-
-            </div>
-
-        `;
-
-    }
-
-
-    // ==================================================
-    // ONLY EXISTING TIRES
-    // ==================================================
-
-    if (data.length === 0) {
-
-        html += `
-
-            <p style="
-                text-align:center;
-                padding:15px;
-            ">
-
-                🛞 No Tire
-
-            </p>
-
-        `;
-
-    }
-
+    /*
+     * Empty positions မပြ
+     */
 
     data.forEach(
-        tire => {
+        function (tire) {
 
             const inspectionCount =
                 inspections.filter(
-                    inspection =>
-                        String(
+                    function (inspection) {
+
+                        return String(
                             inspection.Tire_ID
-                        )
-                        ===
-                        String(
+                        ) === String(
                             tire.Tire_ID
-                        )
+                        );
+
+                    }
                 ).length;
 
 
@@ -1465,17 +1987,13 @@ function showTirePanel(
                 >
 
                     <b>
-
                         ${escapeHTML(
                             tire.Position
                         )}
-
                         —
-
                         ${escapeHTML(
                             tire.Tire_ID
                         )}
-
                     </b>
 
                     <br>
@@ -1511,23 +2029,16 @@ function showTirePanel(
                     🔍 Inspections:
                     ${inspectionCount}
 
-
                     ${
                         tire.Note
-                        ?
-                        `
-
-                        <br>
-
-                        📝 <b>Tire Note:</b>
-
-                        ${escapeHTML(
-                            tire.Note
-                        )}
-
-                        `
-                        :
-                        ""
+                            ? `
+                                <br>
+                                📝
+                                ${escapeHTML(
+                                    tire.Note
+                                )}
+                            `
+                            : ""
                     }
 
                 </div>
@@ -1536,6 +2047,17 @@ function showTirePanel(
 
         }
     );
+
+
+    if (!data.length) {
+
+        html += `
+            <p>
+                No Tire
+            </p>
+        `;
+
+    }
 
 
     html += `
@@ -1562,14 +2084,15 @@ function openCustomerVehiclesByVehicle(
 
     const vehicle =
         vehicles.find(
-            v =>
-                String(
+            function (v) {
+
+                return String(
                     v.Vehicle_ID
-                )
-                ===
-                String(
+                ) === String(
                     vehicleID
-                )
+                );
+
+            }
         );
 
 
@@ -1593,14 +2116,15 @@ function openTireInspection(
 
     const tire =
         tires.find(
-            t =>
-                String(
+            function (t) {
+
+                return String(
                     t.Tire_ID
-                )
-                ===
-                String(
+                ) === String(
                     tireID
-                )
+                );
+
+            }
         );
 
 
@@ -1610,25 +2134,28 @@ function openTireInspection(
     const history =
         inspections
             .filter(
-                inspection =>
-                    String(
+                function (inspection) {
+
+                    return String(
                         inspection.Tire_ID
-                    )
-                    ===
-                    String(
+                    ) === String(
                         tireID
-                    )
+                    );
+
+                }
             )
             .sort(
-                (a, b) =>
-                    String(
+                function (a, b) {
+
+                    return String(
                         b.Inspection_Date
-                    )
-                    .localeCompare(
+                    ).localeCompare(
                         String(
                             a.Inspection_Date
                         )
-                    )
+                    );
+
+                }
             );
 
 
@@ -1664,7 +2191,6 @@ function showInspectionPanel(
             padding:12px;
         ">
 
-
             <button
                 onclick="
                     openVehicleTiresByTire(
@@ -1679,16 +2205,12 @@ function showInspectionPanel(
                     border-radius:8px;
                 "
             >
-
                 ← Tires
-
             </button>
 
 
             <h3>
-
                 🔍 Inspection
-
             </h3>
 
 
@@ -1700,12 +2222,10 @@ function showInspectionPanel(
             ">
 
                 <b>
-
                     🛞
                     ${escapeHTML(
                         tire.Tire_ID
                     )}
-
                 </b>
 
                 <br>
@@ -1743,55 +2263,36 @@ function showInspectionPanel(
                     tire.Installation_Date
                 )}
 
+                ${
+                    tire.Note
+                        ? `
+                            <br><br>
+                            📝
+                            ${escapeHTML(
+                                tire.Note
+                            )}
+                        `
+                        : ""
+                }
+
             </div>
 
     `;
 
 
-    // TIRE NOTE
-    if (tire.Note) {
+    if (!data.length) {
 
         html += `
-
-            <div style="
-                background:#fff8e1;
-                padding:10px;
-                border-radius:8px;
-                margin-bottom:12px;
-            ">
-
-                📝 <b>Tire Note:</b>
-
-                <br>
-
-                ${escapeHTML(
-                    tire.Note
-                )}
-
-            </div>
-
-        `;
-
-    }
-
-
-    if (data.length === 0) {
-
-        html += `
-
             <p>
-
                 No inspection history.
-
             </p>
-
         `;
 
     }
 
 
     data.forEach(
-        item => {
+        function (item) {
 
             html += `
 
@@ -1800,12 +2301,10 @@ function showInspectionPanel(
                 >
 
                     <b>
-
                         🔍
                         ${escapeHTML(
                             item.Inspection_ID
                         )}
-
                     </b>
 
                     <br>
@@ -1817,67 +2316,45 @@ function showInspectionPanel(
 
                     <br><br>
 
-
-                    <b>
-                        OTD:
-                    </b>
-
+                    <b>OTD:</b>
                     ${escapeHTML(
                         item.OTD
                     )}
-
                     mm
 
                     <br>
 
-
-                    <b>
-                        RTD:
-                    </b>
-
+                    <b>RTD:</b>
                     ${escapeHTML(
                         item.RTD
                     )}
-
                     mm
 
                     <br>
 
-
                     🚛 Driven:
-
                     ${escapeHTML(
                         item["Driven Kilometer"]
                     )}
-
                     km
 
                     <br>
 
-
                     📊 Km/mm:
-
                     ${escapeHTML(
                         item["Km/mm"]
                     )}
 
-
                     ${
                         item.Note
-                        ?
-                        `
-
-                        <br><br>
-
-                        📝 <b>Inspection Note:</b>
-
-                        ${escapeHTML(
-                            item.Note
-                        )}
-
-                        `
-                        :
-                        ""
+                            ? `
+                                <br><br>
+                                📝
+                                ${escapeHTML(
+                                    item.Note
+                                )}
+                            `
+                            : ""
                     }
 
                 </div>
@@ -1912,14 +2389,15 @@ function openVehicleTiresByTire(
 
     const tire =
         tires.find(
-            t =>
-                String(
+            function (t) {
+
+                return String(
                     t.Tire_ID
-                )
-                ===
-                String(
+                ) === String(
                     tireID
-                )
+                );
+
+            }
         );
 
 
@@ -1934,164 +2412,7 @@ function openVehicleTiresByTire(
 
 
 // ======================================================
-// DISTANCE
-// ======================================================
-
-function showDistance(
-    customer
-) {
-
-    const element =
-        document.getElementById(
-            "distance-" +
-            safeID(
-                customer.Customer_ID
-            )
-        );
-
-
-    if (!element) return;
-
-
-    if (
-        userLat === null ||
-        userLng === null
-    ) {
-
-        element.innerHTML =
-            "📏 Location unavailable";
-
-        return;
-
-    }
-
-
-    const lat =
-        Number(
-            customer.Latitude
-        );
-
-    const lng =
-        Number(
-            customer.Longitude
-        );
-
-
-    if (
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lng)
-    ) {
-
-        element.innerHTML =
-            "📏 Location unavailable";
-
-        return;
-
-    }
-
-
-    const R = 6371;
-
-
-    const dLat =
-        (
-            lat - userLat
-        )
-        *
-        Math.PI / 180;
-
-
-    const dLng =
-        (
-            lng - userLng
-        )
-        *
-        Math.PI / 180;
-
-
-    const a =
-
-        Math.sin(
-            dLat / 2
-        ) ** 2
-
-        +
-
-        Math.cos(
-            userLat *
-            Math.PI / 180
-        )
-
-        *
-
-        Math.cos(
-            lat *
-            Math.PI / 180
-        )
-
-        *
-
-        Math.sin(
-            dLng / 2
-        ) ** 2;
-
-
-    const c =
-        2 *
-        Math.atan2(
-            Math.sqrt(a),
-            Math.sqrt(
-                1 - a
-            )
-        );
-
-
-    const distance =
-        (
-            R * c
-        )
-        .toFixed(1);
-
-
-    element.innerHTML =
-        "📏 Distance: " +
-        distance +
-        " km";
-
-}
-function updateAllDistances() {
-
-    customers.forEach(function(customer) {
-
-        const element =
-            document.getElementById(
-                "distance-" +
-                safeID(
-                    customer.Customer_ID
-                )
-            );
-
-        if (!element) return;
-
-        if (
-            userLat === null ||
-            userLng === null
-        ) {
-
-            element.innerHTML =
-                "📏 Location unavailable";
-
-            return;
-
-        }
-
-        showDistance(customer);
-
-    });
-
-}
-// ======================================================
-// PANEL
+// CUSTOMER LIST
 // ======================================================
 
 function openPanel() {
@@ -2114,7 +2435,7 @@ function openPanel() {
 
 
     setTimeout(
-        function() {
+        function () {
 
             if (map) {
 
@@ -2128,10 +2449,6 @@ function openPanel() {
 
 }
 
-
-// ======================================================
-// CLOSE PANEL
-// ======================================================
 
 function closePanel() {
 
@@ -2153,7 +2470,7 @@ function closePanel() {
 
 
     setTimeout(
-        function() {
+        function () {
 
             if (map) {
 
@@ -2168,18 +2485,13 @@ function closePanel() {
 }
 
 
-// ======================================================
-// TOGGLE LIST
-// ======================================================
-
 function toggleList() {
 
     if (listOpen) {
 
         closePanel();
 
-    }
-    else {
+    } else {
 
         openPanel();
 
@@ -2189,7 +2501,7 @@ function toggleList() {
 
 
 // ======================================================
-// HTML ESCAPE
+// ESCAPE HTML
 // ======================================================
 
 function escapeHTML(
@@ -2199,32 +2511,32 @@ function escapeHTML(
     return String(
         value ?? ""
     )
-    .replace(
-        /&/g,
-        "&amp;"
-    )
-    .replace(
-        /</g,
-        "&lt;"
-    )
-    .replace(
-        />/g,
-        "&gt;"
-    )
-    .replace(
-        /"/g,
-        "&quot;"
-    )
-    .replace(
-        /'/g,
-        "&#039;"
-    );
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 
 }
 
 
 // ======================================================
-// JAVASCRIPT ESCAPE
+// ESCAPE JS
 // ======================================================
 
 function escapeJS(
@@ -2234,18 +2546,22 @@ function escapeJS(
     return String(
         value ?? ""
     )
-    .replace(
-        /\\/g,
-        "\\\\"
-    )
-    .replace(
-        /'/g,
-        "\\'"
-    )
-    .replace(
-        /\r?\n/g,
-        "\\n"
-    );
+        .replace(
+            /\\/g,
+            "\\\\"
+        )
+        .replace(
+            /'/g,
+            "\\'"
+        )
+        .replace(
+            /"/g,
+            '\\"'
+        )
+        .replace(
+            /\r?\n/g,
+            "\\n"
+        );
 
 }
 
@@ -2261,10 +2577,10 @@ function safeID(
     return String(
         value ?? ""
     )
-    .replace(
-        /[^a-zA-Z0-9_-]/g,
-        ""
-    );
+        .replace(
+            /[^a-zA-Z0-9_-]/g,
+            ""
+        );
 
 }
 
@@ -2274,20 +2590,19 @@ function safeID(
 // ======================================================
 
 if (
-    "serviceWorker"
-    in navigator
+    "serviceWorker" in navigator
 ) {
 
     window.addEventListener(
         "load",
-        function() {
+        function () {
 
             navigator.serviceWorker
                 .register(
                     "./service-worker.js"
                 )
                 .then(
-                    function(registration) {
+                    function (registration) {
 
                         console.log(
                             "TPCL Service Worker:",
@@ -2297,7 +2612,7 @@ if (
                     }
                 )
                 .catch(
-                    function(error) {
+                    function (error) {
 
                         console.error(
                             "Service Worker Error:",
