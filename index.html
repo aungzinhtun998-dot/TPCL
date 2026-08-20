@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -17,14 +18,10 @@
         href="./manifest.json"
     >
 
-    <meta
-        name="theme-color"
-        content="#0B7285"
-    >
-
     <link
         rel="icon"
         type="image/png"
+        sizes="192x192"
         href="./icon-192.png"
     >
 
@@ -33,91 +30,212 @@
         href="./icon-192.png"
     >
 
-    <!-- Leaflet CSS -->
+    <meta
+        name="theme-color"
+        content="#0B7285"
+    >
+
+    <!-- CSS -->
+    <link
+        rel="stylesheet"
+        href="./style.css"
+    >
+
+    <!-- Leaflet -->
     <link
         rel="stylesheet"
         href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     >
 
-    <!-- TPCL CSS -->
-    <link
-        rel="stylesheet"
-        href="./style.css"
-    >
 </head>
 
 
 <body>
 
-    <!-- ============================= -->
-    <!-- SEARCH -->
-    <!-- ============================= -->
 
-    <div class="search-box">
+    <!-- ==================================================
+         TOP SEARCH BAR
+    ================================================== -->
 
-        <input
-            id="searchInput"
-            type="text"
-            placeholder="🔍 Search Customer..."
-            autocomplete="off"
-            oninput="searchCustomer()"
+    <div class="top-bar">
+
+        <!-- Search -->
+        <div class="search-box">
+
+            <input
+                type="text"
+                id="searchInput"
+                placeholder="🔍 Search Customer..."
+                oninput="searchCustomer()"
+            >
+
+        </div>
+
+
+        <!-- Filter Button -->
+        <button
+            id="filterBtn"
+            class="filter-btn"
+            onclick="toggleFilterPanel()"
         >
+            ⚙️
+        </button>
 
     </div>
 
 
-    <!-- ============================= -->
-    <!-- MAP -->
-    <!-- ============================= -->
+
+    <!-- ==================================================
+         FILTER PANEL
+    ================================================== -->
+
+    <div
+        id="filterPanel"
+        class="filter-panel"
+    >
+
+        <div class="filter-header">
+
+            <b>⚙️ Filter</b>
+
+            <button
+                onclick="toggleFilterPanel()"
+            >
+                ✕
+            </button>
+
+        </div>
+
+
+        <!-- Region -->
+
+        <label>
+            Region
+        </label>
+
+        <select id="regionFilter">
+
+            <option value="">
+                All Regions
+            </option>
+
+        </select>
+
+
+        <!-- Township -->
+
+        <label>
+            Township
+        </label>
+
+        <select id="townshipFilter">
+
+            <option value="">
+                All Townships
+            </option>
+
+        </select>
+
+
+        <!-- Brand -->
+
+        <label>
+            Brand
+        </label>
+
+        <select id="brandFilter">
+
+            <option value="">
+                All Brands
+            </option>
+
+        </select>
+
+
+        <!-- Vehicle Type -->
+
+        <label>
+            Vehicle Type
+        </label>
+
+        <select id="vehicleTypeFilter">
+
+            <option value="">
+                All Vehicle Types
+            </option>
+
+        </select>
+
+
+        <!-- Buttons -->
+
+        <div class="filter-actions">
+
+            <button
+                class="clear-filter-btn"
+                onclick="clearFilters()"
+            >
+                Clear
+            </button>
+
+            <button
+                class="apply-filter-btn"
+                onclick="applyFilters()"
+            >
+                Apply
+            </button>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- ==================================================
+         MAP
+    ================================================== -->
 
     <div id="map"></div>
 
 
-    <!-- ============================= -->
-    <!-- GPS BUTTON -->
-    <!-- ============================= -->
+
+    <!-- ==================================================
+         GPS BUTTON
+    ================================================== -->
 
     <button
         id="gpsBtn"
-        type="button"
         onclick="goCurrentLocation()"
-        aria-label="Current Location"
     >
         📍
     </button>
 
 
-    <!-- ============================= -->
-    <!-- LIST BUTTON -->
-    <!-- ============================= -->
+
+    <!-- ==================================================
+         CUSTOMER LIST BUTTON
+    ================================================== -->
 
     <button
         id="listBtn"
-        type="button"
         onclick="toggleList()"
-        aria-label="Customer List"
     >
         📋
     </button>
 
 
-    <!-- ============================= -->
-    <!-- CUSTOMER PANEL -->
-    <!-- ============================= -->
+
+    <!-- ==================================================
+         CUSTOMER LIST
+    ================================================== -->
 
     <div id="customerList">
 
         <div class="sheet-header">
 
-            <h3>Customer List</h3>
-
-            <button
-                type="button"
-                onclick="closePanel()"
-                aria-label="Close"
-            >
-                ✕
-            </button>
+            <h3>
+                Customer List
+            </h3>
 
         </div>
 
@@ -131,46 +249,23 @@
     </div>
 
 
-    <!-- ============================= -->
-    <!-- LEAFLET JS -->
-    <!-- ============================= -->
+
+    <!-- ==================================================
+         LEAFLET JS
+    ================================================== -->
 
     <script
-        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-    </script>
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
 
 
-    <!-- ============================= -->
-    <!-- TPCL APP -->
-    <!-- ============================= -->
+    <!-- ==================================================
+         APP JS
+    ================================================== -->
 
-    <script src="./app.js"></script>
-
-
-    <!-- ============================= -->
-    <!-- MAP SIZE FIX -->
-    <!-- ============================= -->
-
-    <script>
-
-        window.addEventListener("load", function () {
-
-            setTimeout(function () {
-
-                if (
-                    typeof map !== "undefined" &&
-                    map
-                ) {
-
-                    map.invalidateSize(true);
-
-                }
-
-            }, 500);
-
-        });
-
-    </script>
+    <script
+        src="./app.js"
+    ></script>
 
 
 </body>
