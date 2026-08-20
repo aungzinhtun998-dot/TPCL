@@ -60,28 +60,105 @@
     <div class="top-bar">
 
         <!-- Search -->
-        <div class="search-box">
+<div class="search-box">
 
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="🔍 Search Customer..."
-                oninput="searchCustomer()"
-            >
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="🔍 Search Customer..."
+        onkeyup="searchCustomer()">
 
-        </div>
+</div>
 
 
-        <!-- Filter Button -->
+<!-- Filter Button -->
+<button
+    id="filterBtn"
+    onclick="toggleFilter()">
+    🔎 Filter
+</button>
+
+
+<!-- Map -->
+<div id="map"></div>
+
+
+<!-- GPS Button -->
+<button
+    id="gpsBtn"
+    onclick="goCurrentLocation()">
+    📍
+</button>
+
+
+<!-- Customer List Button -->
+<button
+    id="listBtn"
+    onclick="toggleList()">
+    📋
+</button>
+
+
+<!-- Customer List -->
+<div id="customerList">
+
+    <div class="sheet-header">
+
+        <h3>Customer List</h3>
+
         <button
-            id="filterBtn"
-            class="filter-btn"
-            onclick="toggleFilterPanel()"
-        >
-            ⚙️
+            id="closeListBtn"
+            onclick="closePanel()">
+            ✕
         </button>
 
     </div>
+
+
+    <!-- Filter Area -->
+    <div id="filterArea">
+
+        <select id="regionFilter">
+            <option value="">
+                All Regions
+            </option>
+        </select>
+
+
+        <select id="townshipFilter">
+            <option value="">
+                All Townships
+            </option>
+        </select>
+
+
+        <select id="brandFilter">
+            <option value="">
+                All Brands
+            </option>
+        </select>
+
+
+        <button onclick="applyFilters()">
+            Apply
+        </button>
+
+
+        <button onclick="clearFilters()">
+            Clear
+        </button>
+
+    </div>
+
+
+    <!-- Customer List Content -->
+    <div id="listContent">
+
+        Loading Customers...
+
+    </div>
+
+</div>
 
 
 
