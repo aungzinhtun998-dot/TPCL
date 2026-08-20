@@ -266,7 +266,80 @@
     <script
         src="./app.js"
     ></script>
+<!-- Search -->
+<div class="search-box">
+    <input
+        type="text"
+        id="searchInput"
+        placeholder="🔍 Search Customer..."
+    >
+</div>
 
+<!-- Filter Button -->
+<button id="filterBtn" onclick="toggleFilter()">
+    🔎 Filter
+</button>
+
+<!-- GPS Button -->
+<button id="gpsBtn" onclick="goCurrentLocation()">
+    📍
+</button>
+
+<!-- Customer List Button -->
+<button id="listBtn" onclick="toggleList()">
+    📋
+</button>
+
+<!-- Map -->
+<div id="map"></div>
+
+<!-- Customer List -->
+<div id="customerList">
+
+    <div class="sheet-header">
+
+        <h3>Customer List</h3>
+
+        <button
+            id="closeListBtn"
+            onclick="closePanel()"
+            aria-label="Close Customer List"
+        >
+            ✕
+        </button>
+
+    </div>
+
+    <!-- Filter Area -->
+    <div id="filterArea">
+
+        <select id="regionFilter">
+            <option value="">All Regions</option>
+        </select>
+
+        <select id="townshipFilter">
+            <option value="">All Townships</option>
+        </select>
+
+        <select id="brandFilter">
+            <option value="">All Brands</option>
+        </select>
+
+        <button onclick="applyFilters()">
+            Apply
+        </button>
+
+        <button onclick="clearFilters()">
+            Clear
+        </button>
+
+    </div>
+
+    <div id="listContent">
+        Loading Customers...
+    </div>
+
+</div>
 
 </body>
 
