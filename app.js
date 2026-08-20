@@ -2621,7 +2621,172 @@ if (
 
                     }
                 );
+// ======================================================
+// FILTER TOGGLE
+// ======================================================
 
+function toggleFilter() {
+
+    const filterArea =
+        document.getElementById("filterArea");
+
+    if (!filterArea) return;
+
+    filterArea.classList.toggle("show");
+
+}
+
+
+// ======================================================
+// BUILD FILTER OPTIONS
+// ======================================================
+
+function buildFilters() {
+
+    const regionFilter =
+        document.getElementById("regionFilter");
+
+    const townshipFilter =
+        document.getElementById("townshipFilter");
+
+    const brandFilter =
+        document.getElementById("brandFilter");
+
+    if (
+        !regionFilter ||
+        !townshipFilter ||
+        !brandFilter
+    ) return;
+
+
+    const regions = [
+        ...new Set(
+            customers
+                .map(c => String(c.Region || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+
+
+    const townships = [
+        ...new Set(
+            customers
+                .map(c => String(c.Township || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+
+
+    const brands = [
+        ...new Set(
+            customers
+                .map(c => String(c.Brand || "").trim())
+                .filter(Boolean)
+        )
+    ].sort();
+
+
+    regionFilter.innerHTML =
+        `<option value="">All Regions</option>` +
+        regions.map(
+            x => `<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`
+        ).join("");
+
+
+    townshipFilter.innerHTML =
+        `<option value="">All Townships</option>` +
+        townships.map(
+            x => `<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`
+        ).join("");
+
+
+    brandFilter.innerHTML =
+        `<option value="">All Brands</option>` +
+        brands.map(
+            x => `<option value="${escapeHTML(x)}">${escapeHTML(x)}</option>`
+        ).join("");
+
+}
+
+
+// ======================================================
+// APPLY FILTER
+// ======================================================
+
+function applyFilters() {
+
+    const region =
+        document.getElementById("regionFilter")?.value || "";
+
+    const township =
+        document.getElementById("townshipFilter")?.value || "";
+
+    const brand =
+        document.getElementById("brandFilter")?.value || "";
+
+
+    const filtered =
+        customers.filter(customer => {
+
+            const customerRegion =
+                String(customer.Region || "").trim();
+
+            const customerTownship =
+                String(customer.Township || "").trim();
+
+            const customerBrand =
+                String(customer.Brand || "").trim();
+
+
+            return (
+
+                (!region ||
+                    customerRegion === region)
+
+                &&
+
+                (!township ||
+                    customerTownship === township)
+
+                &&
+
+                (!brand ||
+                    customerBrand === brand)
+
+            );
+
+        });
+
+
+    showCustomers(filtered);
+
+}
+
+
+// ======================================================
+// CLEAR FILTER
+// ======================================================
+
+function clearFilters() {
+
+    const region =
+        document.getElementById("regionFilter");
+
+    const township =
+        document.getElementById("townshipFilter");
+
+    const brand =
+        document.getElementById("brandFilter");
+
+
+    if (region) region.value = "";
+    if (township) township.value = "";
+    if (brand) brand.value = "";
+
+
+    showCustomers();
+
+}
         }
     );
 
